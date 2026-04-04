@@ -1,0 +1,697 @@
+/* ============================================================
+   HORT CASTEVELL — Dashboard
+   Mediterranean farmhouse aesthetic
+   Fraunces (serif display) + Outfit (geometric sans)
+   Earthy terracotta, olive, warm parchment palette
+   ============================================================ */
+
+/* --- Tokens --- */
+:root {
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Outfit', 'Helvetica Neue', sans-serif;
+
+  --bg: #F2EBD9;
+  --bg-warm: #EDE4CE;
+  --surface: #FDFAF3;
+  --surface-hover: #FFF9EE;
+  --text: #3A3225;
+  --text-secondary: #7A6F5E;
+  --text-tertiary: #A69C89;
+  --border: #DDD4C0;
+  --border-strong: #C8BDA6;
+
+  --olive: #3D5A3A;
+  --olive-soft: #5B7A56;
+  --olive-pale: #E8F0E4;
+  --terracotta: #C4673D;
+  --terracotta-pale: #FAE8DE;
+  --amber: #D4A04A;
+  --amber-pale: #FBF0D6;
+  --soil: #5C4033;
+  --clay: #8B6A3E;
+  --sky: #3B7A8C;
+  --sky-pale: #E0F0F4;
+
+  --red: #B33A3A;
+  --red-pale: #F8E4E4;
+  --orange: #C4873D;
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+
+  --shadow-sm: 0 1px 2px rgba(58, 50, 37, 0.06);
+  --shadow: 0 2px 8px rgba(58, 50, 37, 0.08), 0 1px 2px rgba(58, 50, 37, 0.04);
+  --shadow-lg: 0 8px 24px rgba(58, 50, 37, 0.1), 0 2px 6px rgba(58, 50, 37, 0.06);
+  --shadow-glow: 0 0 0 3px rgba(61, 90, 58, 0.12);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* --- Topographic texture background --- */
+.topo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image:
+    repeating-conic-gradient(var(--soil) 0% 25%, transparent 0% 50%) 0 0 / 60px 60px,
+    radial-gradient(circle at 30% 40%, var(--olive) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, var(--terracotta) 0%, transparent 50%);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--olive);
+  color: #fff;
+  padding: 0.85rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(61, 90, 58, 0.25);
+}
+
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+.header-icon svg { width: 100%; height: 100%; }
+
+header h1 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.header-sub {
+  font-size: 0.7rem;
+  font-weight: 300;
+  opacity: 0.65;
+  letter-spacing: 0.04em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.conn-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(4px);
+  transition: background 0.3s;
+}
+
+.conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6ee66e;
+  transition: background 0.3s;
+}
+
+.conn-badge.offline .conn-dot { background: #e66e6e; }
+.conn-badge.offline { background: rgba(179, 58, 58, 0.25); }
+.conn-badge.online { background: rgba(110, 230, 110, 0.15); }
+
+.last-update {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.update-label {
+  font-size: 0.6rem;
+  font-weight: 300;
+  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.update-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ============================================================
+   AMBIENT STRIP
+   ============================================================ */
+.ambient-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+}
+
+.ambient-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s;
+  animation: slideUp 0.5s var(--ease-out) both;
+}
+
+.ambient-card:nth-child(1) { animation-delay: 0.05s; }
+.ambient-card:nth-child(2) { animation-delay: 0.1s; }
+.ambient-card:nth-child(3) { animation-delay: 0.15s; }
+
+.ambient-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.ambient-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.ambient-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.ambient-temp .ambient-icon { color: var(--terracotta); opacity: 0.7; }
+.ambient-hum .ambient-icon { color: var(--sky); opacity: 0.7; }
+.ambient-lux .ambient-icon { color: var(--amber); opacity: 0.7; }
+
+.ambient-data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ambient-val {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.ambient-lbl {
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+  animation: fadeIn 0.6s 0.2s both;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.divider-label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   NODE CARDS — Water Drop Gauges
+   ============================================================ */
+.nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.node-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 0.85rem 0.85rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s;
+  animation: slideUp 0.55s var(--ease-out) both;
+  animation-delay: calc(0.15s + var(--delay) * 0.08s);
+  position: relative;
+  overflow: hidden;
+}
+
+.node-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--card-accent);
+  opacity: 0.6;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.node-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.node-card.alert {
+  border-color: var(--red);
+  background: var(--red-pale);
+}
+
+.node-card.alert::before {
+  background: var(--red);
+  opacity: 0.8;
+}
+
+.node-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.node-badge {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--card-accent);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 5px;
+}
+
+.node-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: background 0.4s, box-shadow 0.4s;
+}
+
+.node-status.ok {
+  background: #5ab35a;
+  box-shadow: 0 0 6px rgba(90, 179, 90, 0.4);
+}
+
+.node-status.warn {
+  background: var(--orange);
+  box-shadow: 0 0 6px rgba(196, 135, 61, 0.4);
+}
+
+.node-status.critical {
+  background: var(--red);
+  box-shadow: 0 0 6px rgba(179, 58, 58, 0.5);
+  animation: pulse 1.5s ease infinite;
+}
+
+.node-name {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* --- Water Drop Gauge --- */
+.gauge-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.gauge {
+  width: 85px;
+  height: 99px;
+}
+
+.drop-outline {
+  fill: var(--card-accent-light);
+  stroke: var(--card-accent);
+  stroke-width: 1.5;
+  stroke-opacity: 0.25;
+}
+
+.water-level {
+  transition: y 1.2s var(--ease-out);
+}
+
+.water-wave {
+  animation: waveMotion 3s ease-in-out infinite;
+}
+
+.gauge-value {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(253, 250, 243, 0.8);
+}
+
+/* --- Node Meta --- */
+.node-meta {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta-item svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.5;
+}
+
+/* ============================================================
+   PANELS (Chart & Log)
+   ============================================================ */
+.chart-panel,
+.log-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.15rem;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.6s var(--ease-out) 0.5s both;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* --- Period Tabs --- */
+.period-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-warm);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.btn-period {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+}
+
+.btn-period:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.5);
+}
+
+.btn-period.active {
+  background: var(--olive);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(61, 90, 58, 0.25);
+}
+
+/* --- Chart --- */
+.chart-container {
+  height: 240px;
+  position: relative;
+}
+
+/* --- Log --- */
+.log-body {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.log-body::-webkit-scrollbar { width: 4px; }
+.log-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.log-entry {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  align-items: baseline;
+}
+
+.log-entry:last-child { border-bottom: none; }
+
+.log-time {
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  min-width: 4.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.log-event {
+  color: var(--text-secondary);
+}
+
+.log-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.log-empty-state svg {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.6rem;
+  opacity: 0.35;
+}
+
+.log-empty-state p {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.log-empty-state span {
+  font-size: 0.72rem;
+  margin-top: 0.2rem;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  position: relative;
+  z-index: 1;
+  padding: 1.75rem 1rem;
+  text-align: center;
+}
+
+.footer-inner {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.footer-sep {
+  margin: 0 0.35rem;
+  opacity: 0.4;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes waveMotion {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-8px) translateY(-2px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 520px) {
+  header h1 { font-size: 1.1rem; }
+  .header-icon { width: 32px; height: 32px; }
+
+  .header-right {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+  }
+
+  .last-update { display: none; }
+
+  .ambient-strip {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .ambient-card { padding: 0.7rem; }
+  .ambient-val { font-size: 1.15rem; }
+
+  .nodes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+
+  .gauge { width: 72px; height: 84px; }
+  .gauge-value { font-size: 1.15rem; }
+  .node-name { font-size: 0.68rem; }
+}
+
+@media (min-width: 640px) {
+  main {
+    padding: 1.75rem 1.5rem 4rem;
+    gap: 1.5rem;
+  }
+
+  .nodes-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .chart-container { height: 280px; }
+
+  .ambient-card { padding: 1rem; }
+  .ambient-val { font-size: 1.5rem; }
+}
+
+@media (min-width: 900px) {
+  .gauge { width: 90px; height: 105px; }
+  .gauge-value { font-size: 1.4rem; }
+  .chart-container { height: 310px; }
+}
