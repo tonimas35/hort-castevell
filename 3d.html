@@ -416,9 +416,11 @@
     const HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
 
     // Bancal dimensions (cm → three.js units, 1 unit = 10cm)
-    const BANCAL_W = 26;   // 260cm
-    const BANCAL_L = 67;   // 670cm
-    const ROW_SPACING = 5.5;
+    // Ample = 260cm (X axis), Llarg = 670cm (Z axis)
+    // Les 4 files van al llarg (Z), separades en ample (X)
+    const BANCAL_W = 26;   // 260cm — ample (X)
+    const BANCAL_L = 67;   // 670cm — llarg (Z)
+    const ROW_SPACING = 5;  // separació entre files (X)
 
     const ROW_COLORS = [0x4E7A48, 0x3B7A8C, 0xC4673D, 0x8B6A3E];
     const ROW_NAMES = ['Enciams + Porros', 'Enciams', 'Tomàquets', 'Pebrots + Alb.'];
@@ -456,7 +458,7 @@
 
       // Camera
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
-      camera.position.set(35, 30, 45);
+      camera.position.set(30, 25, 50);
 
       // Controls
       controls = new OrbitControls(camera, canvas);
@@ -596,18 +598,18 @@
         bancalGroup.add(mesh);
       });
 
-      // Soil surface (4 rows with different colors based on humidity)
+      // Soil surface (4 rows running along Z, separated along X)
       for (let i = 0; i < 4; i++) {
-        const rowGeo = new THREE.BoxGeometry(BANCAL_W - 1, 0.3, ROW_SPACING * 2.2);
+        const rowGeo = new THREE.BoxGeometry(ROW_SPACING, 0.3, BANCAL_L - 2);
         const rowMat = new THREE.MeshStandardMaterial({
           color: SOIL_DRY.clone(),
           roughness: 0.9,
           metalness: 0,
         });
 
-        const rowZ = -BANCAL_L / 2 + 8 + i * (BANCAL_L - 16) / 3;
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
         const row = new THREE.Mesh(rowGeo, rowMat);
-        row.position.set(0, 0.6, rowZ);
+        row.position.set(rowX, 0.6, 0);
         row.receiveShadow = true;
         row.userData = { type: 'row', rowIndex: i };
         bancalGroup.add(row);
@@ -632,11 +634,12 @@
       const pipeMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 });
 
       for (let i = 0; i < 4; i++) {
-        const rowZ = -BANCAL_L / 2 + 8 + i * (BANCAL_L - 16) / 3;
-        const pipeGeo = new THREE.CylinderGeometry(0.15, 0.15, BANCAL_W - 2, 8);
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
+        // Pipe runs along Z (length of bancal)
+        const pipeGeo = new THREE.CylinderGeometry(0.15, 0.15, BANCAL_L - 2, 8);
         const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-        pipe.rotation.z = Math.PI / 2;
-        pipe.position.set(0, 0.85, rowZ);
+        pipe.rotation.x = Math.PI / 2;  // align along Z
+        pipe.position.set(rowX, 0.85, 0);
         scene.add(pipe);
       }
     }
@@ -647,27 +650,27 @@
     function createPlants() {
       for (let i = 0; i < 4; i++) {
         const group = new THREE.Group();
-        const rowZ = -BANCAL_L / 2 + 8 + i * (BANCAL_L - 16) / 3;
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
         const color = ROW_COLORS[i];
 
-        const plantCount = i < 2 ? 12 : 8; // More lettuce, fewer tomatoes
-        const spacing = (BANCAL_W - 4) / plantCount;
+        const plantCount = i < 2 ? 14 : 10;
+        const spacing = (BANCAL_L - 6) / plantCount;
 
         for (let j = 0; j < plantCount; j++) {
-          const x = -BANCAL_W / 2 + 2 + j * spacing + spacing / 2;
-          const z = rowZ + (Math.random() - 0.5) * 2;
+          const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2;
+          const x = rowX + (Math.random() - 0.5) * 1.5;
           const plant = createPlant(i, color);
           plant.position.set(x, 0.8, z);
           plant.scale.setScalar(0.6 + Math.random() * 0.4);
           group.add(plant);
         }
 
-        // Tomato pyramids (rows 3 & 4)
+        // Tomato pyramids (rows 3 & 4) — along Z
         if (i >= 2) {
-          for (let p = 0; p < 2; p++) {
-            const px = -BANCAL_W / 4 + p * BANCAL_W / 2;
+          for (let p = 0; p < 4; p++) {
+            const pz = -BANCAL_L / 2 + 10 + p * (BANCAL_L - 20) / 3;
             const pyramid = createCanePyramid();
-            pyramid.position.set(px, 0.8, rowZ);
+            pyramid.position.set(rowX, 0.8, pz);
             group.add(pyramid);
           }
         }
@@ -770,7 +773,7 @@
     // ============================================================
     function createSensors() {
       for (let i = 0; i < 4; i++) {
-        const rowZ = -BANCAL_L / 2 + 8 + i * (BANCAL_L - 16) / 3;
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
         const sensorGroup = new THREE.Group();
 
         // Sensor stick
@@ -799,7 +802,7 @@
         light.position.y = 2.5;
         sensorGroup.add(light);
 
-        sensorGroup.position.set(BANCAL_W / 2 - 2, 0.7, rowZ);
+        sensorGroup.position.set(rowX, 0.7, -BANCAL_L / 2 + 6);
         sensorGroup.userData = { type: 'sensor', rowIndex: i };
 
         sensorMeshes.push(sensorGroup);
@@ -853,7 +856,7 @@
       group.add(post);
 
       // Label
-      group.position.set(BANCAL_W / 2 + 5, 0, -BANCAL_L / 2 + 5);
+      group.position.set(BANCAL_W / 2 + 5, 0, -BANCAL_L / 2);
       scene.add(group);
     }
 
@@ -893,10 +896,10 @@
       });
 
       // Animate camera to look at row
-      const rowZ = -BANCAL_L / 2 + 8 + index * (BANCAL_L - 16) / 3;
+      const rowX = -BANCAL_W / 2 + 3.5 + index * (BANCAL_W - 7) / 3;
       animateCamera(
-        new THREE.Vector3(20, 15, rowZ + 20),
-        new THREE.Vector3(0, 1, rowZ)
+        new THREE.Vector3(rowX + 20, 15, 20),
+        new THREE.Vector3(rowX, 1, 0)
       );
 
       // Pulse sensor
