@@ -1,15 +1,21 @@
 /* ============================================================
-   HORT CASTEVELL — Dashboard App
-   Reads latest.json + history.json, renders water-drop gauges
-   and Chart.js humidity history. Falls back to demo data.
+   HORT CASTEVELL — Dashboard App (Supabase)
+   Reads from Supabase PostgreSQL, renders water-drop gauges
    ============================================================ */
 
-const DATA_URL   = 'data/latest.json';
-const HISTORY_URL = 'data/history.json';
-const REFRESH_MS  = 60_000;
+// --- Supabase config ---
+const SUPABASE_URL = 'https://jraxezlqdhwmxnzcrgcg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_UQAT34PaUwL3cagFISGzUQ_u5ommm9l';
 
-const THRESHOLD_LOW = 25;  // <25% → critical (red)
-const THRESHOLD_MED = 45;  // <45% → warning (orange)
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+};
+
+const REFRESH_MS  = 30_000;  // Refresca cada 30s
+
+const THRESHOLD_LOW = 25;
+const THRESHOLD_MED = 45;
 
 let humidityChart = null;
 
@@ -33,18 +39,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-//  LIVE DATA
+//  LIVE DATA — última lectura de Supabase
 // ============================================================
 
 async function loadData() {
   try {
-    const r = await fetch(`${DATA_URL}?t=${Date.now()}`);
+    const url = `${SUPABASE_URL}/rest/v1/readings?order=created_at.desc&limit=1`;
+    const r = await fetch(url, { headers: HEADERS });
     if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    if (!d.nodes || d.nodes.length === 0) throw new Error('empty');
-    renderDashboard(d);
+    const rows = await r.json();
+    if (!rows.length) throw new Error('empty');
+
+    const data = {
+      timestamp: rows[0].timestamp,
+      ambient: rows[0].ambient || {},
+      nodes: rows[0].nodes || [],
+    };
+
+    renderDashboard(data);
     setConnected(true);
-  } catch {
+  } catch (err) {
+    console.log('Esperant dades...', err.message);
     setConnected(false);
     renderDashboard(demoData());
     document.getElementById('lastUpdate').textContent = 'DEMO';
@@ -52,28 +67,23 @@ async function loadData() {
 }
 
 function renderDashboard(data) {
-  // Last update
   if (data.timestamp) {
     const d = new Date(data.timestamp * 1000);
     document.getElementById('lastUpdate').textContent = fmtTime(d);
   }
 
-  // Ambient
   if (data.ambient) {
     setText('ambientTemp', data.ambient.temperature != null ? data.ambient.temperature + '°C' : '—');
     setText('ambientHum',  data.ambient.humidity != null ? data.ambient.humidity + '%' : '—');
     setText('ambientLux',  data.ambient.lux != null ? fmtLux(data.ambient.lux) : '—');
   }
 
-  // Reset all nodes first
   for (let i = 1; i <= 4; i++) resetNode(i);
-
-  // Populate active nodes
   if (data.nodes) data.nodes.forEach(renderNode);
 }
 
 // ============================================================
-//  NODE RENDERING — Water Drop Gauge
+//  NODE RENDERING
 // ============================================================
 
 function renderNode(node) {
@@ -82,21 +92,15 @@ function renderNode(node) {
   const card = document.getElementById(`node-${id}`);
   if (!card) return;
 
-  // --- Water level (Y position) ---
-  // Drop visible area: y=10 (top) to y=125 (bottom), height ~115
-  // water-level rect: height=120, so y ranges from 130 (0%) to 10 (100%)
   const waterY = 130 - (pct / 100) * 120;
   const waterEl = document.getElementById(`water-${id}`);
   if (waterEl) waterEl.setAttribute('y', waterY);
 
-  // Wave position follows water
   const waveEl = document.getElementById(`wave-${id}`);
   if (waveEl) waveEl.setAttribute('transform', `translate(0, ${waterY - 4})`);
 
-  // --- Value ---
   setText(`value-${id}`, `${pct}%`);
 
-  // --- Status dot ---
   const dot = document.getElementById(`status-${id}`);
   dot.classList.remove('ok', 'warn', 'critical');
   if (pct < THRESHOLD_LOW) {
@@ -110,29 +114,19 @@ function renderNode(node) {
     card.classList.remove('alert');
   }
 
-  // --- Battery ---
-  if (node.battery_v != null) {
-    setText(`battery-${id}`, node.battery_v.toFixed(1) + 'V');
-  }
-
-  // --- Last seen ---
-  if (node.last_seen_s != null) {
-    setText(`seen-${id}`, fmtDuration(node.last_seen_s));
-  }
+  if (node.battery_v != null) setText(`battery-${id}`, node.battery_v.toFixed(1) + 'V');
+  if (node.last_seen_s != null) setText(`seen-${id}`, fmtDuration(node.last_seen_s));
 }
 
 function resetNode(id) {
   const card = document.getElementById(`node-${id}`);
   if (!card) return;
   card.classList.remove('alert');
-
   const dot = document.getElementById(`status-${id}`);
   dot.classList.remove('ok', 'warn', 'critical');
-
   setText(`value-${id}`, '—');
   setText(`battery-${id}`, '—');
   setText(`seen-${id}`, '—');
-
   const waterEl = document.getElementById(`water-${id}`);
   if (waterEl) waterEl.setAttribute('y', '130');
 }
@@ -149,16 +143,11 @@ const CHART_COLORS = [
 ];
 
 const CHART_LABELS = [
-  'F1 Enciams + Porros',
-  'F2 Enciams',
-  'F3 Tomàquets',
-  'F4 Pebrots + Alb.',
+  'F1 Enciams + Porros', 'F2 Enciams', 'F3 Tomàquets', 'F4 Pebrots + Alb.',
 ];
 
 function initChart() {
   const ctx = document.getElementById('humidityChart').getContext('2d');
-
-  // Gradient for first dataset
   const grad = ctx.createLinearGradient(0, 0, 0, 280);
   grad.addColorStop(0, 'rgba(78, 122, 72, 0.18)');
   grad.addColorStop(1, 'rgba(78, 122, 72, 0.0)');
@@ -189,10 +178,7 @@ function initChart() {
         legend: {
           position: 'bottom',
           labels: {
-            usePointStyle: true,
-            pointStyle: 'circle',
-            boxWidth: 6,
-            padding: 16,
+            usePointStyle: true, pointStyle: 'circle', boxWidth: 6, padding: 16,
             font: { family: "'Outfit', sans-serif", size: 11, weight: '500' },
             color: '#7A6F5E',
           },
@@ -201,34 +187,19 @@ function initChart() {
           backgroundColor: '#3A3225',
           titleFont: { family: "'Outfit', sans-serif", size: 12 },
           bodyFont: { family: "'Outfit', sans-serif", size: 12 },
-          cornerRadius: 8,
-          padding: 10,
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%`,
-          },
+          cornerRadius: 8, padding: 10,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%` },
         },
       },
       scales: {
         y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            callback: v => v + '%',
-            font: { family: "'Outfit', sans-serif", size: 10 },
-            color: '#A69C89',
-            maxTicksLimit: 6,
-          },
-          grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-          border: { display: false },
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', font: { family: "'Outfit', sans-serif", size: 10 }, color: '#A69C89', maxTicksLimit: 6 },
+          grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, border: { display: false },
         },
         x: {
-          ticks: {
-            maxTicksLimit: 8,
-            font: { family: "'Outfit', sans-serif", size: 10 },
-            color: '#A69C89',
-          },
-          grid: { display: false },
-          border: { display: false },
+          ticks: { maxTicksLimit: 8, font: { family: "'Outfit', sans-serif", size: 10 }, color: '#A69C89' },
+          grid: { display: false }, border: { display: false },
         },
       },
     },
@@ -237,12 +208,18 @@ function initChart() {
 
 async function loadHistory(hours) {
   try {
-    const r = await fetch(`${HISTORY_URL}?t=${Date.now()}`);
+    const cutoff = Math.floor(Date.now() / 1000) - hours * 3600;
+    const url = `${SUPABASE_URL}/rest/v1/readings?timestamp=gte.${cutoff}&order=created_at.asc&limit=500`;
+    const r = await fetch(url, { headers: HEADERS });
     if (!r.ok) throw new Error(r.status);
-    const hist = await r.json();
-    if (!hist.length) throw new Error('empty');
-    const cutoff = Date.now() / 1000 - hours * 3600;
-    applyHistory(hist.filter(d => d.timestamp > cutoff));
+    const rows = await r.json();
+    if (!rows.length) throw new Error('empty');
+
+    const entries = rows.map(row => ({
+      timestamp: row.timestamp,
+      nodes: row.nodes || [],
+    }));
+    applyHistory(entries);
   } catch {
     applyHistory(demoHistory());
   }
@@ -287,7 +264,6 @@ function demoHistory() {
   for (let i = 48; i >= 0; i--) {
     const t = now - i * 1800;
     const hour = new Date(t * 1000).getHours();
-    // Simulate: humidity drops during midday heat, rises at night/watering
     const dayEffect = Math.sin((hour - 6) * Math.PI / 12) * 15;
     out.push({
       timestamp: t,
@@ -306,10 +282,7 @@ function demoHistory() {
 //  UTILS
 // ============================================================
 
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 function setConnected(on) {
   const el = document.getElementById('connectionStatus');
@@ -318,20 +291,8 @@ function setConnected(on) {
   el.querySelector('.conn-text').textContent = on ? 'Connectat' : 'Desconnectat';
 }
 
-function fmtTime(d) {
-  return d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
-}
-
-function fmtDuration(s) {
-  if (s < 60) return 'Ara';
-  if (s < 3600) return Math.floor(s / 60) + ' min';
-  if (s < 86400) return Math.floor(s / 3600) + 'h';
-  return Math.floor(s / 86400) + 'd';
-}
-
-function fmtLux(lux) {
-  return lux >= 10000 ? (lux / 1000).toFixed(0) + 'k lux' : Math.round(lux) + ' lux';
-}
-
+function fmtTime(d) { return d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }); }
+function fmtDuration(s) { if (s < 60) return 'Ara'; if (s < 3600) return Math.floor(s / 60) + ' min'; if (s < 86400) return Math.floor(s / 3600) + 'h'; return Math.floor(s / 86400) + 'd'; }
+function fmtLux(lux) { return lux >= 10000 ? (lux / 1000).toFixed(0) + 'k lux' : Math.round(lux) + ' lux'; }
 function clamp(v) { return Math.round(Math.max(0, Math.min(100, v))); }
 function rnd(n) { return (Math.random() - 0.5) * 2 * n; }
