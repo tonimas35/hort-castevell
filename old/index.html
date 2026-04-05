@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hort Castevell</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+</head>
+<body>
+  <!-- Topographic background texture -->
+  <div class="topo-bg" aria-hidden="true"></div>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="header-icon">
+          <svg viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" fill="#3D5A3A" opacity="0.15"/>
+            <path d="M20 8 C20 8 10 16 10 24 C10 30 14.5 34 20 34 C25.5 34 30 30 30 24 C30 16 20 8 20 8Z" fill="#3D5A3A" opacity="0.3"/>
+            <path d="M20 12 C20 12 13 18 13 24 C13 28.5 16 31 20 31 C24 31 27 28.5 27 24 C27 18 20 12 20 12Z" fill="#4E7A48"/>
+            <path d="M18 20 Q20 17 22 20 Q24 23 20 28 Q16 23 18 20Z" fill="#7CB97A" opacity="0.6"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Hort Castevell</h1>
+          <p class="header-sub">Masia de Castevell, Tarragona</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <a href="3d.html" style="font-size:0.75rem;font-weight:500;color:#fff;text-decoration:none;padding:0.3rem 0.7rem;border-radius:6px;background:rgba(255,255,255,0.12);backdrop-filter:blur(4px);transition:all 0.2s;">Vista 3D</a>
+        <div id="connectionStatus" class="conn-badge offline">
+          <span class="conn-dot"></span>
+          <span class="conn-text">Desconnectat</span>
+        </div>
+        <div class="last-update">
+          <span class="update-label">Última lectura</span>
+          <span id="lastUpdate" class="update-time">—</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Ambient sensors strip -->
+    <section class="ambient-strip" aria-label="Sensors ambientals">
+      <div class="ambient-card ambient-temp">
+        <div class="ambient-card-inner">
+          <svg class="ambient-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0Z"/>
+            <circle cx="11.5" cy="17.5" r="1.5" fill="currentColor" stroke="none"/>
+          </svg>
+          <div class="ambient-data">
+            <span class="ambient-val" id="ambientTemp">—</span>
+            <span class="ambient-lbl">Temperatura</span>
+          </div>
+        </div>
+      </div>
+      <div class="ambient-card ambient-hum">
+        <div class="ambient-card-inner">
+          <svg class="ambient-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+          <div class="ambient-data">
+            <span class="ambient-val" id="ambientHum">—</span>
+            <span class="ambient-lbl">Humitat aire</span>
+          </div>
+        </div>
+      </div>
+      <div class="ambient-card ambient-lux">
+        <div class="ambient-card-inner">
+          <svg class="ambient-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+          <div class="ambient-data">
+            <span class="ambient-val" id="ambientLux">—</span>
+            <span class="ambient-lbl">Llum solar</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section label -->
+    <div class="section-divider">
+      <span class="divider-line"></span>
+      <span class="divider-label">Bancal Principal &middot; 4 Files</span>
+      <span class="divider-line"></span>
+    </div>
+
+    <!-- Node cards — 4 garden rows -->
+    <section class="nodes-grid" aria-label="Files del bancal">
+      <!-- F1 -->
+      <article class="node-card" id="node-1" style="--card-accent: #4E7A48; --card-accent-light: #E8F2E5; --delay: 0">
+        <div class="node-top">
+          <span class="node-badge">F1</span>
+          <span class="node-status" id="status-1"></span>
+        </div>
+        <h2 class="node-name">Enciams + Porros</h2>
+        <div class="gauge-wrap">
+          <svg class="gauge" viewBox="0 0 120 140" aria-hidden="true">
+            <!-- Water drop shape -->
+            <defs>
+              <clipPath id="drop-clip-1">
+                <path d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+              </clipPath>
+              <linearGradient id="water-grad-1" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="var(--card-accent)" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="var(--card-accent)" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <path class="drop-outline" d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+            <g clip-path="url(#drop-clip-1)">
+              <rect class="water-level" id="water-1" x="15" y="130" width="90" height="120" fill="url(#water-grad-1)"/>
+              <!-- Wave animation -->
+              <path class="water-wave" id="wave-1" d="M15 0 Q30 -6 45 0 T75 0 T105 0 V120 H15 Z" fill="var(--card-accent)" opacity="0.18"/>
+            </g>
+          </svg>
+          <span class="gauge-value" id="value-1">—</span>
+        </div>
+        <div class="node-meta">
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V3a3 3 0 0 1 6 0v2"/><line x1="8" y1="9" x2="8" y2="11"/></svg>
+            <span id="battery-1">—</span>
+          </div>
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg>
+            <span id="seen-1">—</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- F2 -->
+      <article class="node-card" id="node-2" style="--card-accent: #3B7A8C; --card-accent-light: #E0F0F4; --delay: 1">
+        <div class="node-top">
+          <span class="node-badge">F2</span>
+          <span class="node-status" id="status-2"></span>
+        </div>
+        <h2 class="node-name">Enciams</h2>
+        <div class="gauge-wrap">
+          <svg class="gauge" viewBox="0 0 120 140" aria-hidden="true">
+            <defs>
+              <clipPath id="drop-clip-2">
+                <path d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+              </clipPath>
+              <linearGradient id="water-grad-2" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="var(--card-accent)" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="var(--card-accent)" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <path class="drop-outline" d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+            <g clip-path="url(#drop-clip-2)">
+              <rect class="water-level" id="water-2" x="15" y="130" width="90" height="120" fill="url(#water-grad-2)"/>
+              <path class="water-wave" id="wave-2" d="M15 0 Q30 -6 45 0 T75 0 T105 0 V120 H15 Z" fill="var(--card-accent)" opacity="0.18"/>
+            </g>
+          </svg>
+          <span class="gauge-value" id="value-2">—</span>
+        </div>
+        <div class="node-meta">
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V3a3 3 0 0 1 6 0v2"/><line x1="8" y1="9" x2="8" y2="11"/></svg>
+            <span id="battery-2">—</span>
+          </div>
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg>
+            <span id="seen-2">—</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- F3 -->
+      <article class="node-card" id="node-3" style="--card-accent: #C4673D; --card-accent-light: #FAE8DE; --delay: 2">
+        <div class="node-top">
+          <span class="node-badge">F3</span>
+          <span class="node-status" id="status-3"></span>
+        </div>
+        <h2 class="node-name">Tomàquets</h2>
+        <div class="gauge-wrap">
+          <svg class="gauge" viewBox="0 0 120 140" aria-hidden="true">
+            <defs>
+              <clipPath id="drop-clip-3">
+                <path d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+              </clipPath>
+              <linearGradient id="water-grad-3" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="var(--card-accent)" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="var(--card-accent)" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <path class="drop-outline" d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+            <g clip-path="url(#drop-clip-3)">
+              <rect class="water-level" id="water-3" x="15" y="130" width="90" height="120" fill="url(#water-grad-3)"/>
+              <path class="water-wave" id="wave-3" d="M15 0 Q30 -6 45 0 T75 0 T105 0 V120 H15 Z" fill="var(--card-accent)" opacity="0.18"/>
+            </g>
+          </svg>
+          <span class="gauge-value" id="value-3">—</span>
+        </div>
+        <div class="node-meta">
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V3a3 3 0 0 1 6 0v2"/><line x1="8" y1="9" x2="8" y2="11"/></svg>
+            <span id="battery-3">—</span>
+          </div>
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg>
+            <span id="seen-3">—</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- F4 -->
+      <article class="node-card" id="node-4" style="--card-accent: #8B6A3E; --card-accent-light: #F3EBDD; --delay: 3">
+        <div class="node-top">
+          <span class="node-badge">F4</span>
+          <span class="node-status" id="status-4"></span>
+        </div>
+        <h2 class="node-name">Pebrots + Albergínies</h2>
+        <div class="gauge-wrap">
+          <svg class="gauge" viewBox="0 0 120 140" aria-hidden="true">
+            <defs>
+              <clipPath id="drop-clip-4">
+                <path d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+              </clipPath>
+              <linearGradient id="water-grad-4" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="var(--card-accent)" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="var(--card-accent)" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <path class="drop-outline" d="M60 10 C60 10 20 55 20 85 C20 107 38 125 60 125 C82 125 100 107 100 85 C100 55 60 10 60 10Z"/>
+            <g clip-path="url(#drop-clip-4)">
+              <rect class="water-level" id="water-4" x="15" y="130" width="90" height="120" fill="url(#water-grad-4)"/>
+              <path class="water-wave" id="wave-4" d="M15 0 Q30 -6 45 0 T75 0 T105 0 V120 H15 Z" fill="var(--card-accent)" opacity="0.18"/>
+            </g>
+          </svg>
+          <span class="gauge-value" id="value-4">—</span>
+        </div>
+        <div class="node-meta">
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V3a3 3 0 0 1 6 0v2"/><line x1="8" y1="9" x2="8" y2="11"/></svg>
+            <span id="battery-4">—</span>
+          </div>
+          <div class="meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l2.5 2.5"/></svg>
+            <span id="seen-4">—</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Chart -->
+    <section class="chart-panel" aria-label="Historial d'humitat">
+      <div class="panel-header">
+        <h2 class="panel-title">Historial d'humitat</h2>
+        <div class="period-tabs">
+          <button class="btn-period active" data-hours="24">24h</button>
+          <button class="btn-period" data-hours="72">3d</button>
+          <button class="btn-period" data-hours="168">7d</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="humidityChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Irrigation log -->
+    <section class="log-panel" aria-label="Registre de reg">
+      <div class="panel-header">
+        <h2 class="panel-title">Registre de reg</h2>
+      </div>
+      <div id="irrigationLog" class="log-body">
+        <div class="log-empty-state">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+            <path d="M24 6 C24 6 10 20 10 30 C10 38 16 44 24 44 C32 44 38 38 38 30 C38 20 24 6 24 6Z" opacity="0.3"/>
+            <path d="M18 28 Q24 22 30 28" />
+            <circle cx="19" cy="34" r="1.5" fill="currentColor" stroke="none" opacity="0.4"/>
+            <circle cx="28" cy="32" r="1" fill="currentColor" stroke="none" opacity="0.3"/>
+          </svg>
+          <p>Encara sense registres de reg</p>
+          <span>Els regs apareixeran aquí quan s'activin les vàlvules</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-brand">Hort Intel&middot;ligent Castevell</span>
+      <span class="footer-sep">&middot;</span>
+      <span>ESP32 &middot; ESP-NOW &middot; SIM 4G</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

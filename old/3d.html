@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hort Castevell — Vista 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+  <style>
+    :root {
+      --font-display: 'Fraunces', 'Georgia', serif;
+      --font-body: 'Outfit', 'Helvetica Neue', sans-serif;
+      --bg: #1a1a14;
+      --surface: rgba(253, 250, 243, 0.06);
+      --text: #F2EBD9;
+      --text-muted: #8a7e6b;
+      --olive: #4E7A48;
+      --terracotta: #C4673D;
+      --sky: #3B7A8C;
+      --clay: #8B6A3E;
+      --red: #B33A3A;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    body:active { cursor: grabbing; }
+
+    /* --- Canvas --- */
+    #canvas3d {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* --- Top bar --- */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1.25rem;
+      background: linear-gradient(to bottom, rgba(26,26,20,0.9) 0%, rgba(26,26,20,0) 100%);
+      pointer-events: none;
+    }
+
+    .topbar > * { pointer-events: auto; }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topbar h1 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .topbar-badge {
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 0.2rem 0.55rem;
+      border-radius: 99px;
+      background: rgba(78, 122, 72, 0.25);
+      color: #7CB97A;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .topbar-nav {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .topbar-nav a {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      background: var(--surface);
+      transition: all 0.2s;
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar-nav a:hover { color: var(--text); background: rgba(253,250,243,0.12); }
+    .topbar-nav a.active { color: var(--text); background: rgba(78,122,72,0.3); }
+
+    /* --- Info panel (right side) --- */
+    .info-panel {
+      position: fixed;
+      top: 4rem;
+      right: 1.25rem;
+      z-index: 100;
+      width: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      opacity: 0;
+      transform: translateX(20px);
+      animation: slideIn 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .info-card {
+      background: rgba(26, 26, 20, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(253, 250, 243, 0.08);
+      border-radius: 12px;
+      padding: 0.85rem;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .info-card:hover {
+      border-color: rgba(253, 250, 243, 0.15);
+      background: rgba(26, 26, 20, 0.85);
+    }
+
+    .info-card.active {
+      border-color: var(--olive);
+      box-shadow: 0 0 20px rgba(78, 122, 72, 0.15);
+    }
+
+    .info-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .info-card-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .info-card-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #555;
+    }
+
+    .info-card-dot.ok { background: #5ab35a; box-shadow: 0 0 8px rgba(90,179,90,0.5); }
+    .info-card-dot.warn { background: #C4873D; box-shadow: 0 0 8px rgba(196,135,61,0.5); }
+    .info-card-dot.critical { background: #B33A3A; box-shadow: 0 0 8px rgba(179,58,58,0.5); animation: pulse 1.5s ease infinite; }
+
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .info-card-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-card-humidity {
+      font-size: 1.8rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 0.35rem;
+    }
+
+    .info-card-meta {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* Color accents per fila */
+    .info-card[data-row="1"] .info-card-humidity { color: #7CB97A; }
+    .info-card[data-row="2"] .info-card-humidity { color: #6BB8CC; }
+    .info-card[data-row="3"] .info-card-humidity { color: #D4956A; }
+    .info-card[data-row="4"] .info-card-humidity { color: #C4A86A; }
+
+    /* --- Bottom bar --- */
+    .bottombar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(to top, rgba(26,26,20,0.9) 0%, rgba(26,26,20,0) 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+
+    .bottombar > * { pointer-events: auto; }
+
+    .ambient-strip {
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    .ambient-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ambient-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ambient-label {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .ctrl-btn {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid rgba(253,250,243,0.08);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+
+    .ctrl-btn:hover { color: var(--text); border-color: rgba(253,250,243,0.2); }
+
+    /* --- Loading --- */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s;
+    }
+
+    .loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+    .loading-text {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-top: 1rem;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(253,250,243,0.1);
+      border-top-color: var(--olive);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- Responsive --- */
+    @media (max-width: 640px) {
+      .info-panel { display: none; }
+      .ambient-strip { gap: 0.75rem; }
+      .ambient-value { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Carregant l'hort...</div>
+  </div>
+
+  <!-- Three.js canvas -->
+  <canvas id="canvas3d"></canvas>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Hort Castevell</h1>
+      <span class="topbar-badge" id="connBadge">Connectant...</span>
+    </div>
+    <nav class="topbar-nav">
+      <a href="index.html">Dashboard</a>
+      <a href="3d.html" class="active">3D</a>
+    </nav>
+  </div>
+
+  <!-- Right info panel -->
+  <div class="info-panel" id="infoPanel">
+    <div class="info-card" data-row="1" id="card-1">
+      <div class="info-card-header">
+        <span class="info-card-label">F1 — Enciams + Porros</span>
+        <span class="info-card-dot" id="dot-1"></span>
+      </div>
+      <div class="info-card-humidity" id="hum-1">—</div>
+      <div class="info-card-meta">
+        <span id="bat-1">—</span>
+        <span id="seen-1">—</span>
+      </div>
+    </div>
+    <div class="info-card" data-row="2" id="card-2">
+      <div class="info-card-header">
+        <span class="info-card-label">F2 — Enciams</span>
+        <span class="info-card-dot" id="dot-2"></span>
+      </div>
+      <div class="info-card-humidity" id="hum-2">—</div>
+      <div class="info-card-meta">
+        <span id="bat-2">—</span>
+        <span id="seen-2">—</span>
+      </div>
+    </div>
+    <div class="info-card" data-row="3" id="card-3">
+      <div class="info-card-header">
+        <span class="info-card-label">F3 — Tomàquets</span>
+        <span class="info-card-dot" id="dot-3"></span>
+      </div>
+      <div class="info-card-humidity" id="hum-3">—</div>
+      <div class="info-card-meta">
+        <span id="bat-3">—</span>
+        <span id="seen-3">—</span>
+      </div>
+    </div>
+    <div class="info-card" data-row="4" id="card-4">
+      <div class="info-card-header">
+        <span class="info-card-label">F4 — Pebrots + Albergínies</span>
+        <span class="info-card-dot" id="dot-4"></span>
+      </div>
+      <div class="info-card-humidity" id="hum-4">—</div>
+      <div class="info-card-meta">
+        <span id="bat-4">—</span>
+        <span id="seen-4">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottombar">
+    <div class="ambient-strip">
+      <div class="ambient-item">
+        <span class="ambient-value" id="ambTemp">—</span>
+        <span class="ambient-label">Temperatura</span>
+      </div>
+      <div class="ambient-item">
+        <span class="ambient-value" id="ambHum">—</span>
+        <span class="ambient-label">Humitat aire</span>
+      </div>
+      <div class="ambient-item">
+        <span class="ambient-value" id="ambLux">—</span>
+        <span class="ambient-label">Llum solar</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="btnReset">Reset vista</button>
+      <button class="ctrl-btn" id="btnTop">Vista zenital</button>
+    </div>
+  </div>
+
+  <!-- Three.js + OrbitControls via importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // ============================================================
+    //  CONFIG
+    // ============================================================
+    const SUPABASE_URL = 'https://jraxezlqdhwmxnzcrgcg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_UQAT34PaUwL3cagFISGzUQ_u5ommm9l';
+    const HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` };
+
+    // Bancal dimensions (cm → three.js units, 1 unit = 10cm)
+    // Ample = 260cm (X axis), Llarg = 670cm (Z axis)
+    // Les 4 files van al llarg (Z), separades en ample (X)
+    const BANCAL_W = 26;   // 260cm — ample (X)
+    const BANCAL_L = 67;   // 670cm — llarg (Z)
+    const ROW_SPACING = 5;  // separació entre files (X)
+
+    const ROW_COLORS = [0x4E7A48, 0x3B7A8C, 0xC4673D, 0x8B6A3E];
+    const ROW_NAMES = ['Enciams + Porros', 'Enciams', 'Tomàquets', 'Pebrots + Alb.'];
+    const SOIL_DRY = new THREE.Color(0x8B7355);
+    const SOIL_WET = new THREE.Color(0x3D2B1F);
+
+    // State
+    let scene, camera, renderer, controls;
+    let rowMeshes = [];
+    let sensorMeshes = [];
+    let plantGroups = [];
+    let waterParticles = [];
+    let selectedRow = -1;
+    let nodeData = [null, null, null, null];
+
+    // ============================================================
+    //  INIT THREE.JS
+    // ============================================================
+    function init() {
+      const canvas = document.getElementById('canvas3d');
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a14);
+      scene.fog = new THREE.FogExp2(0x1a1a14, 0.008);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
+      camera.position.set(30, 25, 50);
+
+      // Controls
+      controls = new OrbitControls(camera, canvas);
+      controls.target.set(0, 0, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.1;
+      controls.minDistance = 15;
+      controls.maxDistance = 100;
+      controls.update();
+
+      // Lights
+      setupLights();
+
+      // Ground
+      createGround();
+
+      // Bancal
+      createBancal();
+
+      // Drip lines
+      createDripLines();
+
+      // Plants
+      createPlants();
+
+      // Sensors
+      createSensors();
+
+      // Central unit (outside bancal)
+      createCentral();
+
+      // Raycaster for interaction
+      setupInteraction(canvas);
+
+      // Buttons
+      document.getElementById('btnReset').addEventListener('click', resetCamera);
+      document.getElementById('btnTop').addEventListener('click', topView);
+
+      // Hide loading
+      setTimeout(() => {
+        document.getElementById('loadingScreen').classList.add('fade-out');
+      }, 800);
+
+      // Resize
+      window.addEventListener('resize', onResize);
+    }
+
+    // ============================================================
+    //  LIGHTS
+    // ============================================================
+    function setupLights() {
+      // Ambient
+      const ambient = new THREE.AmbientLight(0xF5E6D0, 0.3);
+      scene.add(ambient);
+
+      // Sun (directional)
+      const sun = new THREE.DirectionalLight(0xFFF2E0, 1.2);
+      sun.position.set(30, 50, 20);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -50;
+      sun.shadow.camera.right = 50;
+      sun.shadow.camera.top = 50;
+      sun.shadow.camera.bottom = -50;
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 150;
+      sun.shadow.bias = -0.001;
+      scene.add(sun);
+
+      // Fill light
+      const fill = new THREE.DirectionalLight(0xB0D0FF, 0.2);
+      fill.position.set(-20, 20, -10);
+      scene.add(fill);
+
+      // Hemisphere
+      const hemi = new THREE.HemisphereLight(0x87CEEB, 0x3D2B1F, 0.3);
+      scene.add(hemi);
+    }
+
+    // ============================================================
+    //  GROUND
+    // ============================================================
+    function createGround() {
+      const groundGeo = new THREE.PlaneGeometry(200, 200, 50, 50);
+      // Subtle terrain undulation
+      const pos = groundGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i);
+        pos.setZ(i, Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.3);
+      }
+      groundGeo.computeVertexNormals();
+
+      const groundMat = new THREE.MeshStandardMaterial({
+        color: 0x5C4A32,
+        roughness: 0.95,
+        metalness: 0.0,
+      });
+
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.5;
+      ground.receiveShadow = true;
+      scene.add(ground);
+    }
+
+    // ============================================================
+    //  BANCAL (raised bed)
+    // ============================================================
+    function createBancal() {
+      const bancalGroup = new THREE.Group();
+
+      // Wooden border
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: 0x8B6B4A,
+        roughness: 0.85,
+        metalness: 0.05,
+      });
+
+      const wallH = 1.5;
+      const wallThick = 0.4;
+
+      // Four walls
+      const walls = [
+        { w: BANCAL_W + wallThick * 2, d: wallThick, x: 0, z: -BANCAL_L / 2 - wallThick / 2 },
+        { w: BANCAL_W + wallThick * 2, d: wallThick, x: 0, z: BANCAL_L / 2 + wallThick / 2 },
+        { w: wallThick, d: BANCAL_L, x: -BANCAL_W / 2 - wallThick / 2, z: 0 },
+        { w: wallThick, d: BANCAL_L, x: BANCAL_W / 2 + wallThick / 2, z: 0 },
+      ];
+
+      walls.forEach(w => {
+        const geo = new THREE.BoxGeometry(w.w, wallH, w.d);
+        const mesh = new THREE.Mesh(geo, wallMat);
+        mesh.position.set(w.x, wallH / 2 - 0.5, w.z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        bancalGroup.add(mesh);
+      });
+
+      // Soil surface (4 rows running along Z, separated along X)
+      for (let i = 0; i < 4; i++) {
+        const rowGeo = new THREE.BoxGeometry(ROW_SPACING, 0.3, BANCAL_L - 2);
+        const rowMat = new THREE.MeshStandardMaterial({
+          color: SOIL_DRY.clone(),
+          roughness: 0.9,
+          metalness: 0,
+        });
+
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
+        const row = new THREE.Mesh(rowGeo, rowMat);
+        row.position.set(rowX, 0.6, 0);
+        row.receiveShadow = true;
+        row.userData = { type: 'row', rowIndex: i };
+        bancalGroup.add(row);
+        rowMeshes.push(row);
+      }
+
+      // Fill soil between rows
+      const fillGeo = new THREE.BoxGeometry(BANCAL_W, 1, BANCAL_L);
+      const fillMat = new THREE.MeshStandardMaterial({ color: 0x5C4033, roughness: 0.95 });
+      const fill = new THREE.Mesh(fillGeo, fillMat);
+      fill.position.set(0, -0.1, 0);
+      fill.receiveShadow = true;
+      bancalGroup.add(fill);
+
+      scene.add(bancalGroup);
+    }
+
+    // ============================================================
+    //  DRIP LINES
+    // ============================================================
+    function createDripLines() {
+      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 });
+
+      for (let i = 0; i < 4; i++) {
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
+        // Pipe runs along Z (length of bancal)
+        const pipeGeo = new THREE.CylinderGeometry(0.15, 0.15, BANCAL_L - 2, 8);
+        const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+        pipe.rotation.x = Math.PI / 2;  // align along Z
+        pipe.position.set(rowX, 0.85, 0);
+        scene.add(pipe);
+      }
+    }
+
+    // ============================================================
+    //  PLANTS
+    // ============================================================
+    function createPlants() {
+      for (let i = 0; i < 4; i++) {
+        const group = new THREE.Group();
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
+        const color = ROW_COLORS[i];
+
+        const plantCount = i < 2 ? 14 : 10;
+        const spacing = (BANCAL_L - 6) / plantCount;
+
+        for (let j = 0; j < plantCount; j++) {
+          const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2;
+          const x = rowX + (Math.random() - 0.5) * 1.5;
+          const plant = createPlant(i, color);
+          plant.position.set(x, 0.8, z);
+          plant.scale.setScalar(0.6 + Math.random() * 0.4);
+          group.add(plant);
+        }
+
+        // Tomato pyramids (rows 3 & 4) — along Z
+        if (i >= 2) {
+          for (let p = 0; p < 4; p++) {
+            const pz = -BANCAL_L / 2 + 10 + p * (BANCAL_L - 20) / 3;
+            const pyramid = createCanePyramid();
+            pyramid.position.set(rowX, 0.8, pz);
+            group.add(pyramid);
+          }
+        }
+
+        plantGroups.push(group);
+        scene.add(group);
+      }
+    }
+
+    function createPlant(type, color) {
+      const plant = new THREE.Group();
+
+      if (type < 2) {
+        // Lettuce - round leafy shape
+        const leafGeo = new THREE.SphereGeometry(1, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+        const leafMat = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.8,
+          metalness: 0,
+          side: THREE.DoubleSide,
+        });
+        const leaf = new THREE.Mesh(leafGeo, leafMat);
+        leaf.scale.set(1, 0.6, 1);
+        leaf.castShadow = true;
+        plant.add(leaf);
+      } else if (type === 2) {
+        // Tomato - stem + red fruit
+        const stemGeo = new THREE.CylinderGeometry(0.08, 0.1, 3, 6);
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x3A5A25, roughness: 0.8 });
+        const stem = new THREE.Mesh(stemGeo, stemMat);
+        stem.position.y = 1.5;
+        stem.castShadow = true;
+        plant.add(stem);
+
+        // Leaves
+        for (let l = 0; l < 3; l++) {
+          const lGeo = new THREE.SphereGeometry(0.5, 6, 4);
+          const lMat = new THREE.MeshStandardMaterial({ color: 0x4A7A3A, roughness: 0.8 });
+          const lf = new THREE.Mesh(lGeo, lMat);
+          lf.position.set(Math.sin(l * 2.1) * 0.6, 1 + l * 0.7, Math.cos(l * 2.1) * 0.6);
+          lf.scale.set(1, 0.5, 1);
+          plant.add(lf);
+        }
+
+        // Fruit
+        const fruitGeo = new THREE.SphereGeometry(0.3, 8, 6);
+        const fruitMat = new THREE.MeshStandardMaterial({ color: 0xCC3333, roughness: 0.6 });
+        const fruit = new THREE.Mesh(fruitGeo, fruitMat);
+        fruit.position.set(0.4, 1.5, 0.3);
+        fruit.castShadow = true;
+        plant.add(fruit);
+      } else {
+        // Pepper - bush shape
+        const bushGeo = new THREE.SphereGeometry(0.9, 8, 6);
+        const bushMat = new THREE.MeshStandardMaterial({ color: 0x3D6B30, roughness: 0.8 });
+        const bush = new THREE.Mesh(bushGeo, bushMat);
+        bush.position.y = 0.8;
+        bush.scale.set(1, 0.7, 1);
+        bush.castShadow = true;
+        plant.add(bush);
+
+        // Pepper fruit
+        const pepGeo = new THREE.CapsuleGeometry(0.15, 0.5, 4, 6);
+        const pepMat = new THREE.MeshStandardMaterial({ color: 0xDD4422, roughness: 0.5 });
+        const pep = new THREE.Mesh(pepGeo, pepMat);
+        pep.position.set(0.5, 0.9, 0.3);
+        pep.rotation.z = 0.3;
+        plant.add(pep);
+      }
+
+      return plant;
+    }
+
+    function createCanePyramid() {
+      const group = new THREE.Group();
+      const caneMat = new THREE.MeshStandardMaterial({ color: 0x9B8B55, roughness: 0.9 });
+      const height = 5;
+
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const r = 1.2;
+        const caneGeo = new THREE.CylinderGeometry(0.06, 0.08, height, 4);
+        const cane = new THREE.Mesh(caneGeo, caneMat);
+
+        const topX = 0, topZ = 0;
+        const botX = Math.sin(angle) * r, botZ = Math.cos(angle) * r;
+
+        cane.position.set((topX + botX) / 2, height / 2, (topZ + botZ) / 2);
+        cane.lookAt(new THREE.Vector3(topX, height, topZ));
+        cane.rotateX(Math.PI / 2);
+
+        group.add(cane);
+      }
+
+      return group;
+    }
+
+    // ============================================================
+    //  SENSORS (clickable)
+    // ============================================================
+    function createSensors() {
+      for (let i = 0; i < 4; i++) {
+        const rowX = -BANCAL_W / 2 + 3.5 + i * (BANCAL_W - 7) / 3;
+        const sensorGroup = new THREE.Group();
+
+        // Sensor stick
+        const stickGeo = new THREE.BoxGeometry(0.2, 2, 0.6);
+        const stickMat = new THREE.MeshStandardMaterial({ color: 0x1a3a1a, roughness: 0.7 });
+        const stick = new THREE.Mesh(stickGeo, stickMat);
+        stick.position.y = 1;
+        sensorGroup.add(stick);
+
+        // Sensor head (glowing)
+        const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.8);
+        const headMat = new THREE.MeshStandardMaterial({
+          color: ROW_COLORS[i],
+          roughness: 0.3,
+          metalness: 0.4,
+          emissive: new THREE.Color(ROW_COLORS[i]),
+          emissiveIntensity: 0.2,
+        });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 2.2;
+        head.castShadow = true;
+        sensorGroup.add(head);
+
+        // Point light on sensor
+        const light = new THREE.PointLight(ROW_COLORS[i], 0.5, 8);
+        light.position.y = 2.5;
+        sensorGroup.add(light);
+
+        sensorGroup.position.set(rowX, 0.7, -BANCAL_L / 2 + 6);
+        sensorGroup.userData = { type: 'sensor', rowIndex: i };
+
+        sensorMeshes.push(sensorGroup);
+        scene.add(sensorGroup);
+      }
+    }
+
+    // ============================================================
+    //  CENTRAL UNIT (outside bancal)
+    // ============================================================
+    function createCentral() {
+      const group = new THREE.Group();
+
+      // Box IP65
+      const boxGeo = new THREE.BoxGeometry(2, 1.5, 1);
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.3 });
+      const box = new THREE.Mesh(boxGeo, boxMat);
+      box.position.y = 2;
+      box.castShadow = true;
+      group.add(box);
+
+      // Antenna
+      const antGeo = new THREE.CylinderGeometry(0.04, 0.04, 2, 6);
+      const antMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+      const ant = new THREE.Mesh(antGeo, antMat);
+      ant.position.set(0.6, 3.5, 0);
+      group.add(ant);
+
+      // Status LED
+      const ledGeo = new THREE.SphereGeometry(0.12, 8, 8);
+      const ledMat = new THREE.MeshStandardMaterial({
+        color: 0x00ff00,
+        emissive: 0x00ff00,
+        emissiveIntensity: 1.5,
+      });
+      const led = new THREE.Mesh(ledGeo, ledMat);
+      led.position.set(0, 2.5, 0.55);
+      group.add(led);
+
+      // LED light
+      const ledLight = new THREE.PointLight(0x00ff00, 0.5, 5);
+      ledLight.position.copy(led.position);
+      group.add(ledLight);
+
+      // Post (mount on wall)
+      const postGeo = new THREE.BoxGeometry(0.3, 4, 0.3);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.9 });
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.y = 1.5;
+      post.castShadow = true;
+      group.add(post);
+
+      // Label
+      group.position.set(BANCAL_W / 2 + 5, 0, -BANCAL_L / 2);
+      scene.add(group);
+    }
+
+    // ============================================================
+    //  INTERACTION
+    // ============================================================
+    function setupInteraction(canvas) {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      canvas.addEventListener('click', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        // Check sensors and rows
+        const allClickable = [...sensorMeshes.flatMap(g => g.children), ...rowMeshes];
+        const hits = raycaster.intersectObjects(allClickable, true);
+
+        if (hits.length > 0) {
+          let target = hits[0].object;
+          while (target && !target.userData?.type) target = target.parent;
+
+          if (target?.userData?.rowIndex !== undefined) {
+            selectRow(target.userData.rowIndex);
+          }
+        }
+      });
+    }
+
+    function selectRow(index) {
+      selectedRow = index;
+
+      // Highlight card
+      document.querySelectorAll('.info-card').forEach((c, i) => {
+        c.classList.toggle('active', i === index);
+      });
+
+      // Animate camera to look at row
+      const rowX = -BANCAL_W / 2 + 3.5 + index * (BANCAL_W - 7) / 3;
+      animateCamera(
+        new THREE.Vector3(rowX + 20, 15, 20),
+        new THREE.Vector3(rowX, 1, 0)
+      );
+
+      // Pulse sensor
+      const sensor = sensorMeshes[index];
+      if (sensor) {
+        const head = sensor.children[1]; // head mesh
+        head.material.emissiveIntensity = 1.5;
+        setTimeout(() => { head.material.emissiveIntensity = 0.2; }, 500);
+      }
+    }
+
+    // Card click → select row
+    document.querySelectorAll('.info-card').forEach((card, i) => {
+      card.addEventListener('click', () => selectRow(i));
+    });
+
+    // ============================================================
+    //  CAMERA ANIMATION
+    // ============================================================
+    function animateCamera(targetPos, lookAt) {
+      const startPos = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const duration = 1000;
+      const startTime = Date.now();
+
+      function step() {
+        const t = Math.min(1, (Date.now() - startTime) / duration);
+        const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+
+        camera.position.lerpVectors(startPos, targetPos, ease);
+        controls.target.lerpVectors(startTarget, lookAt, ease);
+        controls.update();
+
+        if (t < 1) requestAnimationFrame(step);
+      }
+      step();
+    }
+
+    function resetCamera() {
+      animateCamera(new THREE.Vector3(35, 30, 45), new THREE.Vector3(0, 0, 0));
+      selectedRow = -1;
+      document.querySelectorAll('.info-card').forEach(c => c.classList.remove('active'));
+    }
+
+    function topView() {
+      animateCamera(new THREE.Vector3(0, 55, 1), new THREE.Vector3(0, 0, 0));
+    }
+
+    // ============================================================
+    //  DATA (Supabase)
+    // ============================================================
+    async function loadData() {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/readings?order=created_at.desc&limit=1`;
+        const r = await fetch(url, { headers: HEADERS });
+        if (!r.ok) throw new Error(r.status);
+        const rows = await r.json();
+        if (!rows.length) throw new Error('empty');
+        const data = rows[0];
+
+        document.getElementById('connBadge').textContent = 'Connectat';
+        document.getElementById('connBadge').style.background = 'rgba(78,122,72,0.25)';
+        document.getElementById('connBadge').style.color = '#7CB97A';
+
+        // Ambient
+        if (data.ambient) {
+          document.getElementById('ambTemp').textContent = data.ambient.temperature != null ? data.ambient.temperature + '°C' : '—';
+          document.getElementById('ambHum').textContent = data.ambient.humidity != null ? data.ambient.humidity + '%' : '—';
+          document.getElementById('ambLux').textContent = data.ambient.lux != null ? (data.ambient.lux >= 10000 ? (data.ambient.lux/1000).toFixed(0)+'k lux' : data.ambient.lux+' lux') : '—';
+        }
+
+        // Nodes
+        const nodes = data.nodes || [];
+        for (let i = 0; i < 4; i++) {
+          const node = nodes.find(n => n.id === i + 1);
+          nodeData[i] = node || null;
+          updateCard(i, node);
+          updateSoil(i, node);
+          updateSensor(i, node);
+        }
+      } catch (err) {
+        document.getElementById('connBadge').textContent = 'Desconnectat';
+        document.getElementById('connBadge').style.background = 'rgba(179,58,58,0.25)';
+        document.getElementById('connBadge').style.color = '#E07070';
+        // Load demo
+        loadDemoData();
+      }
+    }
+
+    function loadDemoData() {
+      const demo = [
+        { id: 1, humidity_pct: 64, battery_v: 3.92, last_seen_s: 180 },
+        { id: 2, humidity_pct: 58, battery_v: 4.01, last_seen_s: 210 },
+        { id: 3, humidity_pct: 37, battery_v: 3.78, last_seen_s: 150 },
+        { id: 4, humidity_pct: 21, battery_v: 3.65, last_seen_s: 300 },
+      ];
+      demo.forEach((n, i) => {
+        nodeData[i] = n;
+        updateCard(i, n);
+        updateSoil(i, n);
+        updateSensor(i, n);
+      });
+    }
+
+    function updateCard(i, node) {
+      const dot = document.getElementById(`dot-${i+1}`);
+      const hum = document.getElementById(`hum-${i+1}`);
+      const bat = document.getElementById(`bat-${i+1}`);
+      const seen = document.getElementById(`seen-${i+1}`);
+
+      if (!node) {
+        hum.textContent = '—';
+        bat.textContent = '—';
+        seen.textContent = '—';
+        dot.className = 'info-card-dot';
+        return;
+      }
+
+      hum.textContent = node.humidity_pct + '%';
+      bat.textContent = node.battery_v ? node.battery_v.toFixed(1) + 'V' : '—';
+      seen.textContent = node.last_seen_s != null ? fmtDuration(node.last_seen_s) : '—';
+
+      dot.className = 'info-card-dot';
+      if (node.humidity_pct < 25) dot.classList.add('critical');
+      else if (node.humidity_pct < 45) dot.classList.add('warn');
+      else dot.classList.add('ok');
+    }
+
+    function updateSoil(i, node) {
+      if (!rowMeshes[i]) return;
+      const pct = node ? node.humidity_pct / 100 : 0;
+      const color = SOIL_DRY.clone().lerp(SOIL_WET, pct);
+      rowMeshes[i].material.color = color;
+    }
+
+    function updateSensor(i, node) {
+      if (!sensorMeshes[i]) return;
+      const head = sensorMeshes[i].children[1];
+      const light = sensorMeshes[i].children[2];
+      if (node && node.humidity_pct < 25) {
+        head.material.emissive.set(0xB33A3A);
+        light.color.set(0xB33A3A);
+      } else if (node && node.humidity_pct < 45) {
+        head.material.emissive.set(0xC4873D);
+        light.color.set(0xC4873D);
+      } else {
+        head.material.emissive.set(ROW_COLORS[i]);
+        light.color.set(ROW_COLORS[i]);
+      }
+    }
+
+    function fmtDuration(s) {
+      if (s < 60) return 'Ara';
+      if (s < 3600) return Math.floor(s / 60) + ' min';
+      if (s < 86400) return Math.floor(s / 3600) + 'h';
+      return Math.floor(s / 86400) + 'd';
+    }
+
+    // ============================================================
+    //  ANIMATION LOOP
+    // ============================================================
+    let time = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.01;
+
+      // Gentle plant sway
+      plantGroups.forEach((group, i) => {
+        group.children.forEach((plant, j) => {
+          plant.rotation.z = Math.sin(time + j * 0.5 + i) * 0.03;
+          plant.rotation.x = Math.cos(time * 0.7 + j * 0.3) * 0.02;
+        });
+      });
+
+      // Sensor glow pulse
+      sensorMeshes.forEach((sensor, i) => {
+        const head = sensor.children[1];
+        const base = 0.15 + Math.sin(time * 2 + i) * 0.1;
+        if (head.material.emissiveIntensity < 1) {
+          head.material.emissiveIntensity = base;
+        }
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ============================================================
+    //  START
+    // ============================================================
+    init();
+    loadData();
+    setInterval(loadData, 30000);
+    animate();
+  </script>
+</body>
+</html>
