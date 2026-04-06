@@ -93,7 +93,7 @@ function PlantMesh({ plant, rowIndex, plantIndex }: { plant: PlantPosition, rowI
   })
 
   return (
-    <group ref={ref} position={[plant.x, 0.8, plant.z]} scale={plant.scale}>
+    <group ref={ref} position={[plant.x, 0.8, plant.z]} scale={plant.scale} rotation-y={Math.PI}>
       {plant.type === 'lettuce' && <Lettuce variant="green" />}
       {plant.type === 'lettuce-purple' && <Lettuce variant="purple" />}
       {plant.type === 'leek' && <Leek />}

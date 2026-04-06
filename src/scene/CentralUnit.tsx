@@ -72,12 +72,13 @@ export default function CentralUnit() {
       {/* Panel tooltip */}
       {showPanel && (
         <Tooltip3D
-          position={[0, 7, 0]}
+          position={[0, 8, 0]}
           borderColor="rgba(100, 200, 100, 0.4)"
           onClose={() => setShowPanel(false)}
           onExpand={() => { setShowPanel(false); setExpandedPanel('central') }}
+          scale={15}
         >
-          <div style={{ paddingTop: '8px' }}>
+          <div style={{ paddingTop: '8px', minWidth: '350px' }}>
             {/* Title */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px',

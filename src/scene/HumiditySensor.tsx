@@ -29,14 +29,14 @@ export default function HumiditySensor({ index, humidity }: Props) {
   const ledRef = useRef<THREE.Mesh>(null)
   const row = ROWS[index]
   const reading = useHortStore(s => s.reading)
-  const selectedValve = useHortStore(s => s.selectedValve)
-  const selectValve = useHortStore(s => s.selectValve)
+  const selectedSensor = useHortStore(s => s.selectedSensor)
+  const selectSensor = useHortStore(s => s.selectSensor)
   const setExpandedPanel = useHortStore(s => s.setExpandedPanel)
 
   // Use real node data or demo
   const node = reading?.nodes.find(n => n.id === row.id) ?? DEMO_DATA[index]
   const pct = node.humidity_pct
-  const isSelected = selectedValve === index + 10 // offset to not clash with valve indices
+  const isSelected = selectedSensor === index
 
   const ledColor = pct < THRESHOLD_LOW
     ? 0xDD3333
@@ -54,7 +54,7 @@ export default function HumiditySensor({ index, humidity }: Props) {
   })
 
   return (
-    <group onClick={(e) => { e.stopPropagation(); selectValve(isSelected ? -1 : index + 10) }}>
+    <group onClick={(e) => { e.stopPropagation(); selectSensor(isSelected ? -1 : index) }}>
       {/* Sensor probe */}
       <mesh position={[0, -0.3, 0]} castShadow>
         <boxGeometry args={[0.12, 1.0, 0.4]} />
@@ -98,7 +98,7 @@ export default function HumiditySensor({ index, humidity }: Props) {
         <sphereGeometry args={[0.04, 6, 6]} />
         <meshStandardMaterial color={ledColor} emissive={ledColor} emissiveIntensity={0.5} />
       </mesh>
-      <pointLight position={[0.15, 0.42, 0.36]} color={ledColor} intensity={0.2} distance={3} />
+      <pointLight position={[0.15, 0.42, 0.36]} color={ledColor} intensity={0.1} distance={1.5} />
 
       {/* Label plate */}
       <mesh position={[0, 0.35, 0.36]}>
@@ -117,8 +117,8 @@ export default function HumiditySensor({ index, humidity }: Props) {
         <Tooltip3D
           position={[0, 2.5, 0]}
           borderColor={row.accent}
-          onClose={() => selectValve(-1)}
-          onExpand={() => { selectValve(-1); setExpandedPanel(`sensor-${index}`) }}
+          onClose={() => selectSensor(-1)}
+          onExpand={() => { selectSensor(-1); setExpandedPanel(`sensor-${index}`) }}
         >
           <div style={{ paddingTop: '8px' }}>
             <div style={{

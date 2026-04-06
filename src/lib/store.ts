@@ -10,6 +10,7 @@ interface HortStore {
   // 3D interaction
   selectedRow: number  // -1 = none, 0-3 = row index
   selectedValve: number // -1 = none, 0-3 = valve clicked
+  selectedSensor: number // -1 = none, 0-3 = humidity sensor clicked
   irrigating: boolean[] // [false, false, false, false] — which rows are irrigating
   expandedPanel: string | null // 'valve-0', 'sensor-2', 'central', etc.
 
@@ -19,6 +20,7 @@ interface HortStore {
   setConnected: (connected: boolean) => void
   selectRow: (index: number) => void
   selectValve: (index: number) => void
+  selectSensor: (index: number) => void
   toggleIrrigation: (index: number) => void
   setExpandedPanel: (panel: string | null) => void
 
@@ -33,6 +35,7 @@ export const useHortStore = create<HortStore>((set, get) => ({
   isConnected: false,
   selectedRow: -1,
   selectedValve: -1,
+  selectedSensor: -1,
   irrigating: [false, false, false, false],
   expandedPanel: null,
 
@@ -41,6 +44,7 @@ export const useHortStore = create<HortStore>((set, get) => ({
   setConnected: (isConnected) => set({ isConnected }),
   selectRow: (selectedRow) => set({ selectedRow }),
   selectValve: (selectedValve) => set({ selectedValve }),
+  selectSensor: (selectedSensor) => set({ selectedSensor }),
   toggleIrrigation: (index) => set((state) => {
     const newIrr = [...state.irrigating]
     newIrr[index] = !newIrr[index]

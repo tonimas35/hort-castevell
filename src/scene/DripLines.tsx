@@ -52,8 +52,8 @@ function DripLine({ rowIndex }: { rowIndex: number }) {
   })
 
   return (
-    <mesh ref={meshRef} position={[rowX, 0.85, 0]} rotation-x={Math.PI / 2}>
-      <cylinderGeometry args={[0.15, 0.15, BANCAL_L - 2, 16, 64]} />
+    <mesh ref={meshRef} position={[rowX, 0.9, 0]} rotation-x={Math.PI / 2}>
+      <cylinderGeometry args={[0.18, 0.18, BANCAL_L - 2, 16, 64]} />
       <shaderMaterial
         uniforms={uniforms}
         vertexShader={vertexShader}

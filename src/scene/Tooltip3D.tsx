@@ -5,12 +5,13 @@ interface Props {
   borderColor: string
   onClose: () => void
   onExpand?: () => void
+  scale?: number  // lower = bigger tooltip
   children: React.ReactNode
 }
 
-export default function Tooltip3D({ position, borderColor, onClose, onExpand, children }: Props) {
+export default function Tooltip3D({ position, borderColor, onClose, onExpand, scale = 15, children }: Props) {
   return (
-    <Html position={position} center distanceFactor={15} style={{ pointerEvents: 'auto' }}>
+    <Html position={position} center distanceFactor={scale} style={{ pointerEvents: 'auto' }}>
       <div style={{
         background: 'rgba(20, 20, 16, 0.92)',
         backdropFilter: 'blur(12px)',
