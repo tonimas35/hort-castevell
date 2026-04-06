@@ -2,7 +2,7 @@ export default function Lights() {
   return (
     <>
       {/* Ambient */}
-      <ambientLight intensity={0.3} color={0xF5E6D0} />
+      <ambientLight intensity={0.6} color={0xF5E6D0} />
 
       {/* Sun */}
       <directionalLight
@@ -22,10 +22,10 @@ export default function Lights() {
       />
 
       {/* Fill */}
-      <directionalLight position={[-20, 20, -10]} intensity={0.2} color={0xB0D0FF} />
+      <directionalLight position={[-20, 20, -10]} intensity={0.4} color={0xB0D0FF} />
 
-      {/* Hemisphere */}
-      <hemisphereLight args={[0x87CEEB, 0x3D2B1F, 0.3]} />
+      {/* Hemisphere — sky blue above, earth below */}
+      <hemisphereLight args={[0x87CEEB, 0x8B7355, 0.5]} />
     </>
   )
 }

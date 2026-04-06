@@ -45,7 +45,6 @@ export default function Bancal() {
             key={row.id}
             index={i}
             humidity={node?.humidity_pct ?? 0}
-            onClick={() => selectRow(i)}
           />
         )
       })}

@@ -23,7 +23,7 @@ interface PlantPosition {
   x: number
   z: number
   scale: number
-  type: 'lettuce' | 'leek' | 'tomato' | 'pepper' | 'aubergine'
+  type: 'lettuce' | 'lettuce-purple' | 'leek' | 'tomato' | 'pepper' | 'aubergine'
 }
 
 function generateRowPlants(rowIndex: number): PlantPosition[] {
@@ -31,41 +31,51 @@ function generateRowPlants(rowIndex: number): PlantPosition[] {
   const rowX = -BANCAL_W / 2 + 3.5 + rowIndex * (BANCAL_W - 7) / 3
   const plants: PlantPosition[] = []
 
+  // Layout real de l'hort de Castevell
+  // Files de dreta (F1) a esquerra (F4): F1=index 0, F4=index 3
+
   if (rowIndex === 0) {
-    // F1: Enciams + Porros
-    const count = 14
-    const spacing = (BANCAL_L - 6) / count
-    for (let j = 0; j < count; j++) {
+    // F1 (dreta): 10 porros + 2 enciams verds + 5 enciams morades
+    const items: PlantPosition['type'][] = [
+      'leek','leek','leek','leek','leek','leek','leek','leek','leek','leek',
+      'lettuce','lettuce',
+      'lettuce-purple','lettuce-purple','lettuce-purple','lettuce-purple','lettuce-purple',
+    ]
+    const spacing = (BANCAL_L - 6) / items.length
+    for (let j = 0; j < items.length; j++) {
       const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2
-      const type = j % 3 === 0 ? 'leek' as const : 'lettuce' as const
-      plants.push({ x: rowX + (rng() - 0.5) * 1.5, z, scale: 0.6 + rng() * 0.4, type })
+      plants.push({ x: rowX + (rng() - 0.5) * 1.2, z, scale: 1.2 + rng() * 0.6, type: items[j] })
     }
   } else if (rowIndex === 1) {
-    // F2: Enciams
+    // F2: 9 enciams verds + 4 enciams morades
+    const items: PlantPosition['type'][] = [
+      'lettuce','lettuce','lettuce','lettuce','lettuce','lettuce','lettuce','lettuce','lettuce',
+      'lettuce-purple','lettuce-purple','lettuce-purple','lettuce-purple',
+    ]
+    const spacing = (BANCAL_L - 6) / items.length
+    for (let j = 0; j < items.length; j++) {
+      const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2
+      plants.push({ x: rowX + (rng() - 0.5) * 1.2, z, scale: 1.2 + rng() * 0.6, type: items[j] })
+    }
+  } else if (rowIndex === 2) {
+    // F3: 14 tomateres
     const count = 14
     const spacing = (BANCAL_L - 6) / count
     for (let j = 0; j < count; j++) {
       const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2
-      plants.push({ x: rowX + (rng() - 0.5) * 1.5, z, scale: 0.6 + rng() * 0.4, type: 'lettuce' })
-    }
-  } else if (rowIndex === 2) {
-    // F3: Tomàquets
-    const count = 10
-    const spacing = (BANCAL_L - 6) / count
-    for (let j = 0; j < count; j++) {
-      const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2
-      plants.push({ x: rowX + (rng() - 0.5) * 1.2, z, scale: 0.6 + rng() * 0.4, type: 'tomato' })
+      plants.push({ x: rowX + (rng() - 0.5) * 1.0, z, scale: 1.1 + rng() * 0.5, type: 'tomato' })
     }
   } else {
-    // F4: 6 pebrots + 2 albergínies + tomàquets
-    const count = 10
-    const spacing = (BANCAL_L - 6) / count
-    for (let j = 0; j < count; j++) {
+    // F4 (esquerra): 7 pimientos + 3 berengenes + 4 tomateres
+    const items: PlantPosition['type'][] = [
+      'pepper','pepper','pepper','pepper','pepper','pepper','pepper',
+      'aubergine','aubergine','aubergine',
+      'tomato','tomato','tomato','tomato',
+    ]
+    const spacing = (BANCAL_L - 6) / items.length
+    for (let j = 0; j < items.length; j++) {
       const z = -BANCAL_L / 2 + 3 + j * spacing + spacing / 2
-      let type: PlantPosition['type'] = 'pepper'
-      if (j === 3 || j === 7) type = 'aubergine'
-      if (j >= 8) type = 'tomato'
-      plants.push({ x: rowX + (rng() - 0.5) * 1.2, z, scale: 0.6 + rng() * 0.4, type })
+      plants.push({ x: rowX + (rng() - 0.5) * 1.0, z, scale: 1.1 + rng() * 0.5, type: items[j] })
     }
   }
 
@@ -84,7 +94,8 @@ function PlantMesh({ plant, rowIndex, plantIndex }: { plant: PlantPosition, rowI
 
   return (
     <group ref={ref} position={[plant.x, 0.8, plant.z]} scale={plant.scale}>
-      {plant.type === 'lettuce' && <Lettuce color={ROWS[rowIndex].accentHex} />}
+      {plant.type === 'lettuce' && <Lettuce variant="green" />}
+      {plant.type === 'lettuce-purple' && <Lettuce variant="purple" />}
       {plant.type === 'leek' && <Leek />}
       {plant.type === 'tomato' && <Tomato />}
       {plant.type === 'pepper' && <Pepper />}
@@ -99,19 +110,6 @@ export default function Plants() {
     []
   )
 
-  // Cane pyramids for rows 2 & 3 (tomatoes)
-  const pyramids = useMemo(() => {
-    const result: { x: number, z: number }[] = []
-    for (let row = 2; row <= 3; row++) {
-      const rowX = -BANCAL_W / 2 + 3.5 + row * (BANCAL_W - 7) / 3
-      for (let p = 0; p < 4; p++) {
-        const pz = -BANCAL_L / 2 + 10 + p * (BANCAL_L - 20) / 3
-        result.push({ x: rowX, z: pz })
-      }
-    }
-    return result
-  }, [])
-
   return (
     <>
       {allPlants.map((rowPlants, rowIndex) =>
@@ -119,11 +117,6 @@ export default function Plants() {
           <PlantMesh key={`${rowIndex}-${j}`} plant={plant} rowIndex={rowIndex} plantIndex={j} />
         ))
       )}
-      {pyramids.map((p, i) => (
-        <group key={`pyr-${i}`} position={[p.x, 0.8, p.z]}>
-          <CanePyramid />
-        </group>
-      ))}
     </>
   )
 }

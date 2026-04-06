@@ -26,12 +26,13 @@
 // ============================================================
 
 // --- WiFi ---
-const char* WIFI_SSID     = "Matoma";
-const char* WIFI_PASSWORD = "7munxnkcqw33#";
+const char* WIFI_SSID     = "iPhone de Antoni (2)";
+const char* WIFI_PASSWORD = "minion35";
 
 // --- Supabase ---
 const char* SUPABASE_URL = "https://jraxezlqdhwmxnzcrgcg.supabase.co";
-const char* SUPABASE_KEY = "sb_secret_uzYD3oqkP6hAj56w7rbXNw_X6ankGbq";
+// ⚠ Posa aquí la teva clau secreta de Supabase (no pujar a GitHub!)
+const char* SUPABASE_KEY = "SUPABASE_SECRET_KEY_HERE";
 
 // --- ESP-NOW ---
 #define MAX_NODES 4

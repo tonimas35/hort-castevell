@@ -49,7 +49,7 @@ uint8_t centralMAC[] = { 0xD4, 0xE9, 0xF4, 0xE6, 0x28, 0xE8 };
 #define SENSOR_WATER_VALUE 1074
 
 // Canal WiFi fix (ha de coincidir amb la central)
-#define WIFI_CHANNEL 11
+#define WIFI_CHANNEL 6
 
 // ============================================================
 //  ESTRUCTURA DE DADES

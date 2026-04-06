@@ -14,9 +14,9 @@ function getRowTarget(index: number) {
   }
 }
 
-const DEFAULT_POS = new THREE.Vector3(30, 25, 50)
-const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0)
-const TOP_POS = new THREE.Vector3(0, 55, 1)
+const DEFAULT_POS = new THREE.Vector3(25, 30, -40)
+const DEFAULT_TARGET = new THREE.Vector3(0, 0, -5)
+const TOP_POS = new THREE.Vector3(0, 65, -5)
 
 export default function CameraController() {
   const controlsRef = useRef<any>(null)
@@ -42,13 +42,14 @@ export default function CameraController() {
     animating.current = true
   }
 
-  // React to selectedRow changes
+  // Camera animation triggered only from DOM (info cards)
   useEffect(() => {
-    if (selectedRow >= 0 && selectedRow <= 3) {
-      const t = getRowTarget(selectedRow)
+    (window as any).__cameraToRow = (index: number) => {
+      const t = getRowTarget(index)
       startAnimation(t.position, t.lookAt)
     }
-  }, [selectedRow])
+    return () => { delete (window as any).__cameraToRow }
+  }, [])
 
   useFrame(() => {
     if (!animating.current || !controlsRef.current) return
@@ -79,10 +80,11 @@ export default function CameraController() {
     <OrbitControls
       ref={controlsRef}
       enableDamping
-      dampingFactor={0.05}
+      dampingFactor={0.12}
       maxPolarAngle={Math.PI / 2.1}
-      minDistance={15}
+      minDistance={8}
       maxDistance={100}
+      enablePan={false}
     />
   )
 }
