@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Scene3D = lazy(() => import('./pages/Scene3D'))
+const ControlPanel = lazy(() => import('./pages/ControlPanel'))
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/3d" element={<Scene3D />} />
+        <Route path="/control" element={<ControlPanel />} />
       </Routes>
     </Suspense>
   )

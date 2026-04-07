@@ -2,15 +2,14 @@
  * ============================================================
  *  HORT INTEL·LIGENT CASTEVELL — Unitat Central (WiFi + Supabase)
  * ============================================================
- *  ESP32 + ESP-NOW Receiver + WiFi → Supabase PostgreSQL
+ *  ESP32 + ESP-NOW Receiver + DHT22 + WiFi → Supabase PostgreSQL
  *
- *  Funcionament:
- *    1. Rep dades dels nodes sensor per ESP-NOW
- *    2. Connecta per WiFi i insereix a Supabase (PostgreSQL)
- *    3. Sempre encesa (alimentada per USB o font)
+ *  Connexions:
+ *    DHT22 DATA → GPIO 4 (amb resistència pull-up 10K a 3.3V)
+ *    DHT22 VCC  → 3.3V
+ *    DHT22 GND  → GND
  *
- *  Connexions MVP (prototip):
- *    Només USB! Sensor humitat capacitatiu al node, no a la central.
+ *    (Futur) Relé IN1 → GPIO 25
  * ============================================================
  */
 
@@ -20,25 +19,33 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
+#include <DHT.h>
 
 // ============================================================
 //  CONFIGURACIÓ — MODIFICA AQUÍ
 // ============================================================
 
-// --- WiFi ---
-const char* WIFI_SSID     = "iPhone de Antoni (2)";
-const char* WIFI_PASSWORD = "minion35";
+// --- Credencials (fitxer secrets.h, NO es puja a GitHub) ---
+#include "secrets.h"
+
+const char* WIFI_SSID     = SECRET_WIFI_SSID;
+const char* WIFI_PASSWORD = SECRET_WIFI_PASSWORD;
 
 // --- Supabase ---
 const char* SUPABASE_URL = "https://jraxezlqdhwmxnzcrgcg.supabase.co";
-// ⚠ Posa aquí la teva clau secreta de Supabase (no pujar a GitHub!)
-const char* SUPABASE_KEY = "SUPABASE_SECRET_KEY_HERE";
+const char* SUPABASE_KEY = SECRET_SUPABASE_KEY;
+
+// --- DHT22 ---
+#define DHT_PIN 4
+#define DHT_TYPE DHT22
+DHT dht(DHT_PIN, DHT_TYPE);
 
 // --- ESP-NOW ---
 #define MAX_NODES 4
 
 // --- Intervals ---
 #define UPLOAD_INTERVAL_MS  60000   // Puja dades cada 60s
+#define AMBIENT_READ_MS     30000   // Llegeix DHT22 cada 30s
 #define WIFI_RETRY_MS       30000   // Reintenta WiFi cada 30s
 
 // ============================================================
@@ -63,13 +70,14 @@ typedef struct {
 
 NodeState nodes[MAX_NODES];
 
-// Ambient (fase 2)
+// Ambient
 float ambientTemp = NAN;
 float ambientHumidity = NAN;
 float luxLevel = NAN;
 
 // Estat
 unsigned long lastUpload = 0;
+unsigned long lastAmbientRead = 0;
 unsigned long lastWiFiRetry = 0;
 bool newDataAvailable = false;
 bool wifiConnected = false;
@@ -108,6 +116,30 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *data, int le
 }
 
 // ============================================================
+//  SENSORS AMBIENTALS
+// ============================================================
+
+void readAmbientSensors() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+
+  if (!isnan(t)) {
+    ambientTemp = t;
+  }
+  if (!isnan(h)) {
+    ambientHumidity = h;
+  }
+
+  if (!isnan(t) || !isnan(h)) {
+    Serial.printf("🌡 Ambient: %.1f°C  💧 %.1f%%\n", ambientTemp, ambientHumidity);
+    // Tenim noves dades ambientals — marcar per pujar
+    newDataAvailable = true;
+  } else {
+    Serial.println("⚠ DHT22: error de lectura");
+  }
+}
+
+// ============================================================
 //  WiFi
 // ============================================================
 
@@ -140,7 +172,7 @@ void connectWiFi() {
 }
 
 // ============================================================
-//  SUPABASE — INSERT (un sol HTTP POST!)
+//  SUPABASE — INSERT
 // ============================================================
 
 void uploadData() {
@@ -151,7 +183,6 @@ void uploadData() {
 
   Serial.println("\n📤 Pujant dades a Supabase...");
 
-  // Construir JSON
   JsonDocument doc;
 
   time_t now;
@@ -176,11 +207,17 @@ void uploadData() {
     n["last_seen_s"] = (millis() - nodes[i].lastSeen) / 1000;
   }
 
-  String jsonStr;
-  serializeJson(doc, jsonStr);
-  Serial.printf("  JSON: %s\n", jsonStr.c_str());
+  // Serialitzar
+  JsonDocument postDoc;
+  postDoc["timestamp"] = (unsigned long)now;
+  postDoc["ambient"] = doc["ambient"];
+  postDoc["nodes"] = doc["nodes"];
 
-  // HTTP POST a Supabase
+  String postBody;
+  serializeJson(postDoc, postBody);
+  Serial.printf("  JSON: %s\n", postBody.c_str());
+
+  // HTTP POST
   HTTPClient http;
   String url = String(SUPABASE_URL) + "/rest/v1/readings";
 
@@ -189,22 +226,6 @@ void uploadData() {
   http.addHeader("Authorization", String("Bearer ") + SUPABASE_KEY);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Prefer", "return=minimal");
-
-  // El cos és el JSON directe — Supabase mapeja cada camp a una columna
-  String body = "{\"timestamp\":" + String((unsigned long)now) +
-                ",\"ambient\":" + String(jsonStr.substring(jsonStr.indexOf("\"ambient\":") + 10,
-                                          jsonStr.indexOf(",\"nodes\""))) +
-                ",\"nodes\":" + String(jsonStr.substring(jsonStr.indexOf("\"nodes\":") + 8,
-                                        jsonStr.length() - 1)) + "}";
-
-  // Més net: serialitzar directament
-  JsonDocument postDoc;
-  postDoc["timestamp"] = (unsigned long)now;
-  postDoc["ambient"] = doc["ambient"];
-  postDoc["nodes"] = doc["nodes"];
-
-  String postBody;
-  serializeJson(postDoc, postBody);
 
   int code = http.POST(postBody);
 
@@ -236,6 +257,10 @@ void setup() {
     nodes[i].lastSeen = 0;
   }
 
+  // DHT22
+  dht.begin();
+  Serial.println("✓ DHT22 inicialitzat (GPIO 4)");
+
   // WiFi
   WiFi.mode(WIFI_STA);
   connectWiFi();
@@ -253,6 +278,10 @@ void setup() {
   }
   esp_now_register_recv_cb(onDataReceived);
   Serial.println("✓ ESP-NOW inicialitzat — esperant nodes...");
+
+  // Primera lectura ambient
+  readAmbientSensors();
+
   Serial.println("\n🌱 Central llesta!\n");
 }
 
@@ -270,6 +299,12 @@ void loop() {
       connectWiFi();
       lastWiFiRetry = now;
     }
+  }
+
+  // Llegir sensors ambientals cada 30s
+  if (now - lastAmbientRead >= AMBIENT_READ_MS) {
+    readAmbientSensors();
+    lastAmbientRead = now;
   }
 
   // Pujar dades si hi ha noves
