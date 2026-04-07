@@ -40,7 +40,7 @@
 uint8_t centralMAC[] = { 0xD4, 0xE9, 0xF4, 0xE6, 0x28, 0xE8 };
 
 // Temps de deep sleep en minuts
-#define SLEEP_MINUTES 30
+#define SLEEP_MINUTES 240  // 4 hores
 
 // Calibració del sensor capacitatiu (ajustar per la terra de Castevell)
 // Valor ADC amb el sensor a l'aire (sec) — típicament ~3200-3500

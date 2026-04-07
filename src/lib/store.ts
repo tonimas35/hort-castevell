@@ -45,11 +45,26 @@ export const useHortStore = create<HortStore>((set, get) => ({
   selectRow: (selectedRow) => set({ selectedRow }),
   selectValve: (selectedValve) => set({ selectedValve }),
   selectSensor: (selectedSensor) => set({ selectedSensor }),
-  toggleIrrigation: (index) => set((state) => {
+  toggleIrrigation: async (index) => {
+    const state = get()
     const newIrr = [...state.irrigating]
-    newIrr[index] = !newIrr[index]
-    return { irrigating: newIrr, selectedValve: -1 }
-  }),
+    const wasIrrigating = newIrr[index]
+    newIrr[index] = !wasIrrigating
+    set({ irrigating: newIrr, selectedValve: -1 })
+
+    // Enviar comanda real a Supabase → ESP32
+    try {
+      const { supabase } = await import('./supabase')
+      await supabase.from('commands').insert({
+        command: wasIrrigating ? 'close_valve' : 'open_valve',
+        row_id: index + 1,
+        params: wasIrrigating ? {} : { duration_min: 120 },
+      })
+      console.log(`Comanda enviada: ${wasIrrigating ? 'close' : 'open'} F${index + 1}`)
+    } catch (err) {
+      console.error('Error enviant comanda:', err)
+    }
+  },
   setExpandedPanel: (expandedPanel) => set({ expandedPanel }),
 
   getNode: (id) => get().reading?.nodes.find(n => n.id === id),
