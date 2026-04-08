@@ -85,6 +85,20 @@ Preferences prefs;
 //  ESTRUCTURES DE DADES
 // ============================================================
 
+// Central → Node (config remota)
+typedef struct {
+  uint8_t  targetNodeId;      // 0 = tots
+  uint16_t sleepMinutes;      // 0 = no canviar
+  uint8_t  wifiChannel;       // 0 = no canviar
+  uint8_t  forceRead;         // 1 = lectura immediata
+  uint8_t  configVersion;
+} NodeConfig;
+
+// Config pendent per enviar als nodes
+NodeConfig pendingConfig[MAX_NODES];
+bool hasPendingConfig[MAX_NODES] = {false, false, false, false};
+
+// Node → Central
 typedef struct {
   uint8_t  nodeId;
   uint16_t humidityRaw;
@@ -224,6 +238,25 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *data, int le
     Serial.printf("   ⚠ ALERTA: Bateria baixa! (%.2fV)\n", received.batteryVoltage);
   } else {
     nodes[idx].alertBattery = false;
+  }
+
+  // Respondre amb config si hi ha pendent
+  if (hasPendingConfig[idx]) {
+    // Registrar el node com a peer per poder enviar-li
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, info->src_addr, 6);
+    peerInfo.channel = WiFi.channel();
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);  // OK si ja existeix
+
+    esp_err_t result = esp_now_send(info->src_addr, (uint8_t *)&pendingConfig[idx], sizeof(NodeConfig));
+    if (result == ESP_OK) {
+      Serial.printf("   📤 Config enviada al node F%d (sleep=%d canal=%d force=%d)\n",
+        idx + 1, pendingConfig[idx].sleepMinutes, pendingConfig[idx].wifiChannel, pendingConfig[idx].forceRead);
+      hasPendingConfig[idx] = false;
+    } else {
+      Serial.println("   ✗ Error enviant config al node");
+    }
   }
 
   Serial.println("────────────────────────────────");
@@ -407,6 +440,29 @@ void checkCommands() {
           if (elapsed > 0) logIrrigation(i, elapsed);
         }
       }
+    }
+    else if (command == "node_config" && idx >= 0 && idx < MAX_NODES) {
+      // Configurar un node remotament (s'enviarà quan el node es desperti)
+      pendingConfig[idx].targetNodeId = rowId;
+      pendingConfig[idx].sleepMinutes = cmd["params"]["sleep_minutes"] | 0;
+      pendingConfig[idx].wifiChannel = cmd["params"]["wifi_channel"] | 0;
+      pendingConfig[idx].forceRead = cmd["params"]["force_read"] | 0;
+      pendingConfig[idx].configVersion = cmd["params"]["config_version"] | 1;
+      hasPendingConfig[idx] = true;
+      Serial.printf("   → Config pendent per node F%d (sleep=%d canal=%d force=%d)\n",
+        rowId, pendingConfig[idx].sleepMinutes, pendingConfig[idx].wifiChannel, pendingConfig[idx].forceRead);
+    }
+    else if (command == "force_read_all") {
+      // Forçar lectura de tots els nodes
+      for (int i = 0; i < MAX_NODES; i++) {
+        pendingConfig[i].targetNodeId = 0;  // broadcast
+        pendingConfig[i].sleepMinutes = 0;
+        pendingConfig[i].wifiChannel = 0;
+        pendingConfig[i].forceRead = 1;
+        pendingConfig[i].configVersion = 1;
+        hasPendingConfig[i] = true;
+      }
+      Serial.println("   → Lectura forçada pendent per tots els nodes");
     }
 
     // Marcar comanda com executada
