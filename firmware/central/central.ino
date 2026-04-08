@@ -72,6 +72,8 @@ const uint8_t relayPins[] = { RELAY_F1, RELAY_F2, RELAY_F3, RELAY_F4 };
 #define ALERT_CHECK_MS        300000    // Comprova alertes cada 5 min
 #define CONFIG_READ_MS        600000    // Llegeix config cada 10 min
 #define COMMANDS_CHECK_MS     10000     // Comprova comandes cada 10s
+#define LOG_BATCH_MS          30000     // Envia logs cada 30s
+#define MAX_LOG_BUFFER        20        // Màxim logs en buffer
 #define WATCHDOG_TIMEOUT_S    120       // Watchdog: reinicia si no respon en 120s
 
 // --- Llindars per defecte (basats en estudis científics) ---
@@ -157,6 +159,74 @@ bool ntpSynced = false;
 uint8_t bestIrrigationHour = 8;
 
 // ============================================================
+//  LOG REMOT — Buffer + enviament a Supabase
+// ============================================================
+
+struct LogEntry {
+  char level[8];     // "info", "warn", "error"
+  char message[120];
+};
+
+LogEntry logBuffer[MAX_LOG_BUFFER];
+int logCount = 0;
+unsigned long lastLogFlush = 0;
+
+// Afegir log al buffer (substitueix Serial.println per events importants)
+void remoteLog(const char* level, const char* fmt, ...) {
+  // Sempre imprimir al Serial
+  char msg[120];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(msg, sizeof(msg), fmt, args);
+  va_end(args);
+
+  Serial.printf("[%s] %s\n", level, msg);
+
+  // Afegir al buffer si hi ha espai
+  if (logCount < MAX_LOG_BUFFER) {
+    strncpy(logBuffer[logCount].level, level, 7);
+    logBuffer[logCount].level[7] = '\0';
+    strncpy(logBuffer[logCount].message, msg, 119);
+    logBuffer[logCount].message[119] = '\0';
+    logCount++;
+  }
+}
+
+// Enviar buffer de logs a Supabase
+void flushLogs() {
+  if (logCount == 0) return;
+  if (!wifiConnected || WiFi.status() != WL_CONNECTED) return;
+
+  // Construir array JSON amb tots els logs del buffer
+  JsonDocument doc;
+  JsonArray arr = doc.to<JsonArray>();
+
+  for (int i = 0; i < logCount; i++) {
+    JsonObject entry = arr.add<JsonObject>();
+    entry["level"] = logBuffer[i].level;
+    entry["source"] = "central";
+    entry["message"] = logBuffer[i].message;
+  }
+
+  String body;
+  serializeJson(doc, body);
+
+  HTTPClient http;
+  http.begin(String(SUPABASE_URL) + "/rest/v1/device_log");
+  http.addHeader("apikey", SUPABASE_KEY);
+  http.addHeader("Authorization", String("Bearer ") + SUPABASE_KEY);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Prefer", "return=minimal");
+
+  int code = http.POST(body);
+  http.end();
+
+  if (code == 201 || code == 200) {
+    logCount = 0;  // Buidar buffer
+  }
+}
+
+// ============================================================
 //  NVS — Guardar/Llegir estat persistent
 // ============================================================
 
@@ -237,10 +307,12 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *data, int le
   Serial.printf("   Humitat:  %d%% (raw: %d)\n", received.humidityPct, received.humidityRaw);
   Serial.printf("   Bateria:  %.2fV\n", received.batteryVoltage);
   Serial.printf("   Boot #%d\n", received.bootCount);
+  remoteLog("info", "Node F%d: %d%% (raw:%d) bat:%.2fV boot#%d",
+    received.nodeId, received.humidityPct, received.humidityRaw, received.batteryVoltage, received.bootCount);
 
   if (received.batteryVoltage > 0 && received.batteryVoltage < BATTERY_LOW_V) {
     nodes[idx].alertBattery = true;
-    Serial.printf("   ⚠ ALERTA: Bateria baixa! (%.2fV)\n", received.batteryVoltage);
+    remoteLog("warn", "Node F%d bateria baixa: %.2fV", received.nodeId, received.batteryVoltage);
   } else {
     nodes[idx].alertBattery = false;
   }
@@ -280,9 +352,10 @@ void readAmbientSensors() {
 
   if (!isnan(t) || !isnan(h)) {
     Serial.printf("🌡 Ambient: %.1f°C  💧 %.1f%%\n", ambientTemp, ambientHumidity);
+    remoteLog("info", "Ambient: %.1fC %.1f%%", ambientTemp, ambientHumidity);
     newDataAvailable = true;
   } else {
-    Serial.println("⚠ DHT22: error de lectura");
+    remoteLog("warn", "DHT22: error de lectura");
   }
 }
 
@@ -296,6 +369,7 @@ void openValve(uint8_t row) {
   irrigation[row].irrigating = true;
   irrigation[row].startTime = millis();
   Serial.printf("💧 Vàlvula F%d OBERTA\n", row + 1);
+  remoteLog("info", "Valvula F%d OBERTA", row + 1);
 }
 
 void closeValve(uint8_t row) {
@@ -311,6 +385,7 @@ void closeValve(uint8_t row) {
   saveIrrigationState();
 
   Serial.printf("🔒 Vàlvula F%d TANCADA\n", row + 1);
+  remoteLog("info", "Valvula F%d TANCADA", row + 1);
 }
 
 void closeAllValves() {
@@ -531,7 +606,7 @@ void checkIrrigation() {
 
     // Humitat per sota del llindar?
     if (nodes[i].humidityPct < irrigation[i].triggerBelow) {
-      Serial.printf("\n🌿 F%d: Humitat %d%% < %d%% → Reg %d min\n",
+      remoteLog("info", "F%d: Humitat %d%% < %d%% → Reg %d min",
                     i + 1, nodes[i].humidityPct, irrigation[i].triggerBelow, irrigation[i].durationMin);
       openValve(i);
     }
@@ -584,7 +659,7 @@ void checkAlerts() {
 
     if ((now - nodes[i].lastSeen) > NODE_TIMEOUT_MS && !nodes[i].alertDisconnect) {
       nodes[i].alertDisconnect = true;
-      Serial.printf("⚠ ALERTA: Node F%d desconnectat >8h!\n", i + 1);
+      remoteLog("warn", "Node F%d desconnectat >8h!", i + 1);
     }
 
     if (nodes[i].batteryVoltage > 0 && nodes[i].batteryVoltage < BATTERY_LOW_V && !nodes[i].alertBattery) {
@@ -795,6 +870,7 @@ void setup() {
   Serial.println("  ✓ Estat persistent (NVS)");
   Serial.println("  ✓ Validació NTP");
   Serial.printf("  ✓ Finestra reg: 8-12h\n\n");
+  remoteLog("info", "Central v3 arrencada - WiFi: %s Canal: %d", wifiNetworks[currentNetwork >= 0 ? currentNetwork : 0][0], WiFi.channel());
 }
 
 // ============================================================
@@ -847,6 +923,12 @@ void loop() {
   if (now - lastConfigRead >= CONFIG_READ_MS) {
     readConfig();
     lastConfigRead = now;
+  }
+
+  // Enviar logs remots
+  if (now - lastLogFlush >= LOG_BATCH_MS) {
+    flushLogs();
+    lastLogFlush = now;
   }
 
   // Pujar dades

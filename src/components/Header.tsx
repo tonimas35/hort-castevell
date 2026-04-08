@@ -32,6 +32,7 @@ export default function Header() {
             <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Dashboard</Link>
             <Link to="/3d" className={location.pathname === '/3d' ? 'active' : ''}>Vista 3D</Link>
             <Link to="/control" className={location.pathname === '/control' ? 'active' : ''}>Control</Link>
+            <Link to="/log" className={location.pathname === '/log' ? 'active' : ''}>Log</Link>
           </nav>
           <ConnectionBadge />
           <div className="last-update">
