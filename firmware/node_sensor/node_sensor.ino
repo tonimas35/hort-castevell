@@ -120,7 +120,21 @@ bool forceImmediateRead = false;
 
 float readBattery() {
   int raw = analogRead(BATTERY_PIN);
-  return (raw / 4095.0) * 3.3 * BATTERY_DIVIDER_RATIO;
+  float voltage = (raw / 4095.0) * 3.3 * BATTERY_DIVIDER_RATIO;
+  // Calibració: multímetre 3.445V vs ESP32 3.20V → factor 1.077
+  voltage *= 1.077;
+  return voltage;
+}
+
+// Converteix voltatge 18650 a percentatge (3.0V=0%, 4.2V=100%)
+uint8_t batteryPercent(float voltage) {
+  if (voltage >= 4.2) return 100;
+  if (voltage <= 3.0) return 0;
+  // Corba de descàrrega 18650 (aproximada, no lineal)
+  if (voltage > 4.0) return 80 + (voltage - 4.0) * 100;      // 4.0-4.2V = 80-100%
+  if (voltage > 3.7) return 30 + (voltage - 3.7) * 166.67;   // 3.7-4.0V = 30-80%
+  if (voltage > 3.5) return 10 + (voltage - 3.5) * 100;      // 3.5-3.7V = 10-30%
+  return (voltage - 3.0) * 20;                                 // 3.0-3.5V = 0-10%
 }
 
 uint16_t readHumidityRaw() {
@@ -224,8 +238,9 @@ void setup() {
   sensorData.batteryVoltage = readBattery();
   sensorData.bootCount = bootCount;
 
+  uint8_t batPct = batteryPercent(sensorData.batteryVoltage);
   Serial.printf("  Humitat:  %d%% (raw: %d)\n", sensorData.humidityPct, sensorData.humidityRaw);
-  Serial.printf("  Bateria:  %.2fV\n", sensorData.batteryVoltage);
+  Serial.printf("  Bateria:  %.2fV (%d%%)\n", sensorData.batteryVoltage, batPct);
 
   // 3. WiFi + ESP-NOW
   WiFi.mode(WIFI_STA);

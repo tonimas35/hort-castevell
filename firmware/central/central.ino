@@ -83,7 +83,7 @@ const uint8_t relayPins[] = { RELAY_F1, RELAY_F2, RELAY_F3, RELAY_F4 };
 
 // --- Alertes ---
 #define NODE_TIMEOUT_MS       28800000  // 8h
-#define BATTERY_LOW_V         3.3
+#define BATTERY_LOW_V         2.9       // Voltatge sota càrrega, ~3.1V real
 
 // --- NVS ---
 Preferences prefs;
@@ -307,8 +307,17 @@ void onDataReceived(const esp_now_recv_info_t *info, const uint8_t *data, int le
   Serial.printf("   Humitat:  %d%% (raw: %d)\n", received.humidityPct, received.humidityRaw);
   Serial.printf("   Bateria:  %.2fV\n", received.batteryVoltage);
   Serial.printf("   Boot #%d\n", received.bootCount);
-  remoteLog("info", "Node F%d: %d%% (raw:%d) bat:%.2fV boot#%d",
-    received.nodeId, received.humidityPct, received.humidityRaw, received.batteryVoltage, received.bootCount);
+  // Calcular % bateria (3.0V=0%, 4.2V=100%)
+  int batPct = 0;
+  float bv = received.batteryVoltage;
+  if (bv >= 4.2) batPct = 100;
+  else if (bv > 4.0) batPct = 80 + (bv - 4.0) * 100;
+  else if (bv > 3.7) batPct = 30 + (bv - 3.7) * 166.67;
+  else if (bv > 3.5) batPct = 10 + (bv - 3.5) * 100;
+  else if (bv > 3.0) batPct = (bv - 3.0) * 20;
+
+  remoteLog("info", "Node F%d: hum=%d%% bat=%.2fV(%d%%) boot#%d",
+    received.nodeId, received.humidityPct, received.batteryVoltage, batPct, received.bootCount);
 
   if (received.batteryVoltage > 0 && received.batteryVoltage < BATTERY_LOW_V) {
     nodes[idx].alertBattery = true;
