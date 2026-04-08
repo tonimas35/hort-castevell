@@ -374,7 +374,7 @@ void readAmbientSensors() {
 
 void openValve(uint8_t row) {
   if (row >= MAX_NODES) return;
-  digitalWrite(relayPins[row], HIGH);  // Polaritat invertida
+  digitalWrite(relayPins[row], HIGH);  // HIGH = obert (MOSFET condueix)
   irrigation[row].irrigating = true;
   irrigation[row].startTime = millis();
   Serial.printf("💧 Vàlvula F%d OBERTA\n", row + 1);
@@ -383,7 +383,7 @@ void openValve(uint8_t row) {
 
 void closeValve(uint8_t row) {
   if (row >= MAX_NODES) return;
-  digitalWrite(relayPins[row], LOW);  // Polaritat invertida
+  digitalWrite(relayPins[row], LOW);   // LOW = tancat (MOSFET talla)
   irrigation[row].irrigating = false;
   irrigation[row].lastIrrEnd = millis();
 
@@ -399,7 +399,7 @@ void closeValve(uint8_t row) {
 
 void closeAllValves() {
   for (int i = 0; i < MAX_NODES; i++) {
-    digitalWrite(relayPins[i], LOW);  // Polaritat invertida
+    digitalWrite(relayPins[i], LOW);  // LOW = tancat
     irrigation[i].irrigating = false;
   }
 }
@@ -793,7 +793,7 @@ void setup() {
   // ⚠ PRIMER: Tancar totes les vàlvules (seguretat al reinici)
   for (int i = 0; i < 4; i++) {
     pinMode(relayPins[i], OUTPUT);
-    digitalWrite(relayPins[i], LOW);  // Polaritat invertida: LOW = tancat
+    digitalWrite(relayPins[i], LOW);  // LOW = tancat (MOSFET no condueix)
   }
   Serial.println("✓ Vàlvules tancades (seguretat)");
 
