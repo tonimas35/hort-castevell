@@ -43,7 +43,10 @@ uint8_t centralMAC[] = { 0xD4, 0xE9, 0xF4, 0xE6, 0x28, 0xE8 };
 
 // Valors per defecte (es carreguen de NVS si existeixen)
 #define DEFAULT_SLEEP_MINUTES  240   // 4 hores
-#define DEFAULT_WIFI_CHANNEL   6
+// Canals possibles (Matoma=11, iPhone=6)
+#define DEFAULT_WIFI_CHANNEL   11
+const uint8_t FALLBACK_CHANNELS[] = { 11, 6 };
+const int NUM_CHANNELS = 2;
 #define SENSOR_AIR_VALUE       2622
 #define SENSOR_WATER_VALUE     1074
 
@@ -227,7 +230,6 @@ void setup() {
   // 3. WiFi + ESP-NOW
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  esp_wifi_set_channel(wifiChannel, WIFI_SECOND_CHAN_NONE);
 
   if (esp_now_init() != ESP_OK) {
     Serial.println("  ERROR: ESP-NOW init");
@@ -235,41 +237,62 @@ void setup() {
     return;
   }
 
-  // Registrar AMBDÓS callbacks (enviar + rebre)
   esp_now_register_send_cb(onDataSent);
   esp_now_register_recv_cb(onDataReceived);
 
-  // Registrar central com a peer
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, centralMAC, 6);
-  peerInfo.channel = wifiChannel;
-  peerInfo.encrypt = false;
+  // 4. Intentar enviar — primer canal guardat, si falla provar alternatives
+  bool sent = false;
 
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("  ERROR: Peer central");
-    goToSleep();
-    return;
+  for (int attempt = 0; attempt < NUM_CHANNELS && !sent; attempt++) {
+    uint8_t tryChannel = (attempt == 0) ? wifiChannel : FALLBACK_CHANNELS[attempt];
+
+    Serial.printf("  Provant canal %d...\n", tryChannel);
+    esp_wifi_set_channel(tryChannel, WIFI_SECOND_CHAN_NONE);
+
+    // Eliminar peer anterior si existeix
+    esp_now_del_peer(centralMAC);
+
+    // Registrar central com a peer
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, centralMAC, 6);
+    peerInfo.channel = tryChannel;
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
+
+    // Enviar
+    sendSuccess = false;
+    esp_now_send(centralMAC, (uint8_t *)&sensorData, sizeof(sensorData));
+
+    unsigned long start = millis();
+    while (!sendSuccess && (millis() - start < 500)) {
+      delay(10);
+    }
+
+    if (sendSuccess) {
+      sent = true;
+      // Guardar canal que funciona
+      if (tryChannel != wifiChannel) {
+        Serial.printf("  Canal canviat: %d → %d\n", wifiChannel, tryChannel);
+        wifiChannel = tryChannel;
+        saveConfig();
+      }
+    }
   }
 
-  // 4. Enviar dades
-  Serial.println("  Enviant dades per ESP-NOW...");
-  esp_now_send(centralMAC, (uint8_t *)&sensorData, sizeof(sensorData));
-
-  // Esperar callback enviament (500ms)
-  unsigned long start = millis();
-  while (!sendSuccess && (millis() - start < 500)) {
-    delay(10);
+  if (!sent) {
+    Serial.println("  ✗ No s'ha pogut enviar a cap canal");
   }
 
   // 5. Esperar config de la central (800ms)
-  Serial.println("  Esperant config del central...");
-  start = millis();
-  while (!configReceived && (millis() - start < 800)) {
-    delay(10);
-  }
-
-  if (!configReceived) {
-    Serial.println("  (cap config rebuda — usant valors actuals)");
+  if (sent) {
+    Serial.println("  Esperant config del central...");
+    unsigned long start = millis();
+    while (!configReceived && (millis() - start < 800)) {
+      delay(10);
+    }
+    if (!configReceived) {
+      Serial.println("  (cap config rebuda)");
+    }
   }
 
   // 6. Dormir

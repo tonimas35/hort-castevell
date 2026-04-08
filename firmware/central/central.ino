@@ -39,8 +39,13 @@
 // --- Credencials ---
 #include "secrets.h"
 
-const char* WIFI_SSID     = SECRET_WIFI_SSID;
-const char* WIFI_PASSWORD = SECRET_WIFI_PASSWORD;
+// Llista de xarxes WiFi (intenta la primera, si falla la segona)
+const char* wifiNetworks[][2] = {
+  { SECRET_WIFI_SSID_1, SECRET_WIFI_PASSWORD_1 },
+  { SECRET_WIFI_SSID_2, SECRET_WIFI_PASSWORD_2 },
+};
+const int NUM_NETWORKS = 2;
+int currentNetwork = -1;
 const char* SUPABASE_URL  = "https://jraxezlqdhwmxnzcrgcg.supabase.co";
 const char* SUPABASE_KEY  = SECRET_SUPABASE_KEY;
 
@@ -599,28 +604,35 @@ void connectWiFi() {
     return;
   }
 
-  Serial.printf("📶 Connectant a %s...\n", WIFI_SSID);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  // Provar cada xarxa
+  for (int n = 0; n < NUM_NETWORKS; n++) {
+    Serial.printf("📶 Intentant %s...\n", wifiNetworks[n][0]);
+    WiFi.disconnect();
+    WiFi.begin(wifiNetworks[n][0], wifiNetworks[n][1]);
 
-  int tries = 0;
-  while (WiFi.status() != WL_CONNECTED && tries < 20) {
-    delay(500);
-    Serial.print(".");
-    esp_task_wdt_reset();  // Reset watchdog durant espera WiFi
-    tries++;
+    int tries = 0;
+    while (WiFi.status() != WL_CONNECTED && tries < 15) {
+      delay(500);
+      Serial.print(".");
+      esp_task_wdt_reset();
+      tries++;
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      currentNetwork = n;
+      wifiConnected = true;
+      Serial.printf("\n✓ Connectat a %s! IP: %s  Canal: %d\n",
+                    wifiNetworks[n][0], WiFi.localIP().toString().c_str(), WiFi.channel());
+      configTime(3600, 3600, "pool.ntp.org");
+      delay(2000);
+      checkNTP();
+      return;
+    }
+    Serial.println(" ✗");
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    wifiConnected = true;
-    Serial.printf("\n✓ WiFi connectat! IP: %s  Canal: %d\n",
-                  WiFi.localIP().toString().c_str(), WiFi.channel());
-    configTime(3600, 3600, "pool.ntp.org");
-    delay(2000);  // Esperar NTP
-    checkNTP();
-  } else {
-    wifiConnected = false;
-    Serial.println("\n✗ WiFi no disponible");
-  }
+  wifiConnected = false;
+  Serial.println("✗ Cap xarxa WiFi disponible");
 }
 
 // ============================================================
@@ -742,9 +754,10 @@ void setup() {
 
   // OTA — actualització firmware per WiFi
   ArduinoOTA.setHostname("hort-central");
+  ArduinoOTA.setPassword("hort2026");
   ArduinoOTA.onStart([]() {
-    // Tancar vàlvules per seguretat durant actualització
     closeAllValves();
+    esp_task_wdt_delete(NULL);  // Desactivar watchdog durant OTA
     Serial.println("📥 Actualitzant firmware OTA...");
   });
   ArduinoOTA.onEnd([]() { Serial.println("\n✓ OTA completat! Reiniciant..."); });
