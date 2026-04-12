@@ -1,14 +1,16 @@
 export default function Lights() {
+  const sunPosition: [number, number, number] = [50, 80, 30]
+
   return (
     <>
-      {/* Ambient */}
-      <ambientLight intensity={0.6} color={0xF5E6D0} />
+      {/* Ambient — llum càlida base */}
+      <ambientLight intensity={0.5} color={0xFFF5E0} />
 
-      {/* Sun */}
+      {/* Sol — llum principal amb ombres */}
       <directionalLight
-        position={[30, 50, 20]}
-        intensity={1.2}
-        color={0xFFF2E0}
+        position={sunPosition}
+        intensity={2.5}
+        color={0xFFF2D0}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -17,15 +19,18 @@ export default function Lights() {
         shadow-camera-top={50}
         shadow-camera-bottom={-50}
         shadow-camera-near={0.5}
-        shadow-camera-far={150}
-        shadow-bias={-0.001}
+        shadow-camera-far={200}
+        shadow-bias={-0.0005}
       />
 
-      {/* Fill */}
-      <directionalLight position={[-20, 20, -10]} intensity={0.4} color={0xB0D0FF} />
+      {/* Contra-llum blava — simula rebot del cel */}
+      <directionalLight position={[-40, 30, -20]} intensity={0.5} color={0x8EBBDD} />
 
-      {/* Hemisphere — sky blue above, earth below */}
-      <hemisphereLight args={[0x87CEEB, 0x8B7355, 0.5]} />
+      {/* Llum lateral càlida — rebot terra */}
+      <directionalLight position={[10, 5, -30]} intensity={0.2} color={0xDDB888} />
+
+      {/* Hemisphere — cel blau + terra càlida */}
+      <hemisphereLight args={[0x88CCEE, 0xAA8866, 0.4]} />
     </>
   )
 }

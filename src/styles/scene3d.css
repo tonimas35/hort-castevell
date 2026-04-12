@@ -6,7 +6,7 @@
   overflow: hidden;
   height: 100vh;
   cursor: grab;
-  background: #1a1a14;
+  background: transparent;
 }
 
 .scene3d-page:active { cursor: grabbing; }

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import Lights from './Lights'
@@ -18,22 +19,24 @@ export default function GardenCanvas() {
       camera={{ position: [25, 30, -40], fov: 45, near: 0.1, far: 500 }}
       gl={{
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.1,
+        toneMappingExposure: 1.2,
       }}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
     >
       <color attach="background" args={[0x87CEEB]} />
       <fogExp2 attach="fog" args={[0xB0D8F0, 0.004]} />
 
-      <Lights />
-      <Ground />
-      <Bancal />
-      <DripLines />
-      <Plants />
-      <Sensors />
-      <HumiditySensors />
-      <WaterDrops />
-      <CentralUnit />
+      <Suspense fallback={null}>
+        <Lights />
+        <Ground />
+        <Bancal />
+        <DripLines />
+        <Plants />
+        <Sensors />
+        <HumiditySensors />
+        <WaterDrops />
+        <CentralUnit />
+      </Suspense>
       <CameraController />
     </Canvas>
   )
