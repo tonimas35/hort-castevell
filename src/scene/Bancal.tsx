@@ -27,7 +27,7 @@ export default function Bancal() {
           receiveShadow
         >
           <boxGeometry args={[w.w, WALL_H, w.d]} />
-          <meshStandardMaterial color={0x8B6B4A} roughness={0.85} metalness={0.05} />
+          <meshPhysicalMaterial color={0x8B6B4A} roughness={0.75} metalness={0.02} clearcoat={0.08} clearcoatRoughness={0.6} />
         </mesh>
       ))}
 
