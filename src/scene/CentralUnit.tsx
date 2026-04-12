@@ -62,7 +62,7 @@ export default function CentralUnit() {
         <meshStandardMaterial
           color={isConnected ? 0x00ff00 : 0xff4444}
           emissive={isConnected ? 0x00ff00 : 0xff4444}
-          emissiveIntensity={1.5}
+          emissiveIntensity={3.0}
         />
       </mesh>
 

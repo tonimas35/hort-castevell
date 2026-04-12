@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import Lights from './Lights'
 import Ground from './Ground'
@@ -49,6 +50,17 @@ export default function GardenCanvas() {
         <CentralUnit />
       </Suspense>
       <CameraController />
+
+      {/* Post-processing — bloom pels LEDs + vignette cinematogràfic */}
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.9}
+          luminanceSmoothing={0.5}
+          intensity={0.3}
+          mipmapBlur
+        />
+        <Vignette offset={0.3} darkness={0.35} />
+      </EffectComposer>
     </Canvas>
   )
 }
