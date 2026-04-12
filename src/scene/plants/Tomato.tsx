@@ -143,9 +143,11 @@ export default function Tomato() {
           {/* Fruit */}
           <mesh castShadow>
             <sphereGeometry args={[f.size, 8, 6]} />
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               color={f.ripe ? 0xCC2222 : 0x88AA33}
-              roughness={f.ripe ? 0.5 : 0.6}
+              roughness={f.ripe ? 0.4 : 0.5}
+              clearcoat={0.4}
+              clearcoatRoughness={0.2}
             />
           </mesh>
           {/* Small calyx (green star on top) */}

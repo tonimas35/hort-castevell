@@ -159,10 +159,11 @@ export default function Aubergine() {
         <group key={`fr-${i}`} position={[f.x, f.y, f.z]}>
           {/* Fruit body */}
           <mesh geometry={fruitGeo} rotation-z={f.rotZ} scale={f.scale} castShadow>
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               color={f.ripe ? 0x3A1055 : 0x5A3070}
-              roughness={0.35}
-              metalness={0.08}
+              roughness={0.25}
+              clearcoat={0.6}
+              clearcoatRoughness={0.1}
             />
           </mesh>
           {/* Star calyx on top */}

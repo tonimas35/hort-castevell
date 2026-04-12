@@ -144,7 +144,7 @@ export default function Pepper() {
       {peppers.map((p, i) => (
         <group key={`pp-${i}`} position={[p.x, p.y, p.z]}>
           <mesh geometry={fruitGeo} rotation-z={p.rotZ} scale={p.scale} castShadow>
-            <meshStandardMaterial color={p.color} roughness={0.45} metalness={0.05} />
+            <meshPhysicalMaterial color={p.color} roughness={0.35} clearcoat={0.5} clearcoatRoughness={0.15} />
           </mesh>
           {/* Small stem on top */}
           <mesh position={[0, 0.02, 0]}>
