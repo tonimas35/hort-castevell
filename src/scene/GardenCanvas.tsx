@@ -13,6 +13,7 @@ import HumiditySensors from './HumiditySensors'
 import WaterDrops from './WaterDrops'
 import CentralUnit from './CentralUnit'
 import CameraController from './CameraController'
+import Atmosphere from './Atmosphere'
 
 export default function GardenCanvas() {
   return (
@@ -48,6 +49,7 @@ export default function GardenCanvas() {
         <HumiditySensors />
         <WaterDrops />
         <CentralUnit />
+        <Atmosphere />
       </Suspense>
       <CameraController />
 
