@@ -19,12 +19,16 @@ export default function GardenCanvas() {
   return (
     <Canvas
       shadows
+      dpr={[1, 2]}
       camera={{ position: [25, 30, -40], fov: 45, near: 0.1, far: 500 }}
       gl={{
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.2,
+        antialias: true,
+        powerPreference: 'high-performance',
       }}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
+      performance={{ min: 0.5 }}
     >
       <color attach="background" args={[0x87CEEB]} />
       <fogExp2 attach="fog" args={[0xB0D8F0, 0.004]} />

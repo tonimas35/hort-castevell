@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { BANCAL_W, BANCAL_L, SOIL_DRY, SOIL_WET } from '../lib/constants'
+import { useHortStore } from '../lib/store'
 
 interface Props {
   index: number
@@ -13,10 +14,14 @@ const wetColor = new THREE.Color(SOIL_WET)
 
 export default function SoilRow({ index, humidity, onClick }: Props) {
   const rowX = -BANCAL_W / 2 + 3.5 + index * (BANCAL_W - 7) / 3
+  const irrigating = useHortStore(s => s.irrigating[index])
+
+  // Terra més fosca quan rega (simula humitat creixent)
+  const effectiveHumidity = irrigating ? Math.min(100, humidity + 30) : humidity
 
   const color = useMemo(() => {
-    return dryColor.clone().lerp(wetColor, humidity / 100)
-  }, [humidity])
+    return dryColor.clone().lerp(wetColor, effectiveHumidity / 100)
+  }, [effectiveHumidity])
 
   return (
     <mesh
@@ -25,7 +30,13 @@ export default function SoilRow({ index, humidity, onClick }: Props) {
       onClick={onClick}
     >
       <boxGeometry args={[5, 0.3, BANCAL_L - 2]} />
-      <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
+      <meshPhysicalMaterial
+        color={color}
+        roughness={irrigating ? 0.7 : 0.92}
+        metalness={irrigating ? 0.05 : 0}
+        clearcoat={irrigating ? 0.15 : 0}
+        clearcoatRoughness={0.8}
+      />
     </mesh>
   )
 }
