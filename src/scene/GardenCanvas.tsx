@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 import Lights from './Lights'
 import Ground from './Ground'
@@ -25,6 +26,16 @@ export default function GardenCanvas() {
     >
       <color attach="background" args={[0x87CEEB]} />
       <fogExp2 attach="fog" args={[0xB0D8F0, 0.004]} />
+
+      {/* Contact shadows — ombra suau sota cada objecte */}
+      <ContactShadows
+        position={[0, -0.48, 0]}
+        opacity={0.4}
+        scale={120}
+        blur={2}
+        far={25}
+        color="#3A2A1A"
+      />
 
       <Suspense fallback={null}>
         <Lights />
