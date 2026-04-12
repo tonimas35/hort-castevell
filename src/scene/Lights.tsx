@@ -1,10 +1,15 @@
+import { Environment } from '@react-three/drei'
+
 export default function Lights() {
   const sunPosition: [number, number, number] = [50, 80, 30]
 
   return (
     <>
+      {/* HDRI — reflexos realistes */}
+      <Environment preset="sunset" />
+
       {/* Ambient — llum càlida base */}
-      <ambientLight intensity={0.5} color={0xFFF5E0} />
+      <ambientLight intensity={0.6} color={0xFFF5E0} />
 
       {/* Sol — llum principal amb ombres */}
       <directionalLight
