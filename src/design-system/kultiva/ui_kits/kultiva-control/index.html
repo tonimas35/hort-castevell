@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1440"/>
+<title>Kultiva — Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-screen-label="Control Panel">
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="Control.jsx"></script>
+<script type="text/babel" src="RowCard.jsx"></script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect, useMemo } = React;
+
+const INITIAL_ROWS = [
+  { mode:'auto', stage:'vegetatiu',    threshold:55, duration:60, rest:12, currentHumidity:52, nextIrrigationMin: 4*60+32 },
+  { mode:'auto', stage:'vegetatiu',    threshold:55, duration:60, rest:12, currentHumidity:48, nextIrrigationMin: 6*60+15 },
+  { mode:'auto', stage:'fructificacio',threshold:50, duration:90, rest:12, currentHumidity:42, nextIrrigationMin: 0 },
+  { mode:'auto', stage:'floracio',     threshold:50, duration:75, rest:16, currentHumidity:58, nextIrrigationMin: 9*60+48 },
+];
+
+function App(){
+  const [autoIrr, setAutoIrr] = useState(true);
+  const [interval, setInterval_] = useState(30);
+  const [bestHour, setBestHour] = useState('08:00');
+  const [rowStates, setRowStates] = useState(INITIAL_ROWS);
+  const [baseline, setBaseline] = useState({ autoIrr:true, interval:30, bestHour:'08:00', rows: JSON.parse(JSON.stringify(INITIAL_ROWS)) });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [confetti, setConfetti] = useState(0);
+
+  const changeCount = useMemo(()=>{
+    let n = 0;
+    if (autoIrr !== baseline.autoIrr) n++;
+    if (interval !== baseline.interval) n++;
+    if (bestHour !== baseline.bestHour) n++;
+    rowStates.forEach((r, i)=>{
+      const b = baseline.rows[i];
+      ['mode','stage','threshold','duration','rest'].forEach(k=>{
+        if (r[k] !== b[k]) n++;
+      });
+    });
+    return n;
+  }, [autoIrr, interval, bestHour, rowStates, baseline]);
+
+  const onChange = ()=>{};
+  const onSave = ()=>{
+    setSaving(true);
+    setTimeout(()=>{
+      setSaving(false);
+      setSaved(true);
+      setConfetti(c=>c+1);
+      setBaseline({ autoIrr, interval, bestHour, rows: JSON.parse(JSON.stringify(rowStates)) });
+      setTimeout(()=>setSaved(false), 1800);
+    }, 600);
+  };
+  const onDiscard = ()=>{
+    setAutoIrr(baseline.autoIrr);
+    setInterval_(baseline.interval);
+    setBestHour(baseline.bestHour);
+    setRowStates(JSON.parse(JSON.stringify(baseline.rows)));
+  };
+
+  const updateRow = (i, newState)=>{
+    setRowStates(prev => prev.map((r, j)=> j===i ? newState : r));
+  };
+
+  return (
+    <>
+      <HeaderC active="control"/>
+      <main className="kv-main">
+        <div className="kv-page-head">
+          <h1 className="kv-page-title">Configuració del reg</h1>
+          <span className="kv-page-sub">Ajusta llindars per fila · desa per aplicar</span>
+        </div>
+
+        <GlobalSettings
+          autoIrr={autoIrr} setAutoIrr={setAutoIrr}
+          interval={interval} setInterval={setInterval_}
+          bestHour={bestHour} setBestHour={setBestHour}
+          onChange={onChange}/>
+
+        <div className="kv-rows">
+          {CTRL_ROWS.map((r, i)=>(
+            <RowConfigCard key={r.id} row={r}
+              stateData={rowStates[i]}
+              onStateChange={s => updateRow(i, s)}
+              onChange={onChange}/>
+          ))}
+        </div>
+      </main>
+      <footer className="kv-footer">
+        <div className="kv-footer-inner">
+          <span>Kultiva v0.4.2 · ESP-NOW · <a href="#">GitHub</a></span>
+          <span>Fet amb <span className="kv-heart">♥</span> a Castevell</span>
+        </div>
+      </footer>
+      <SaveBar count={changeCount} saving={saving} saved={saved} onSave={onSave} onDiscard={onDiscard}/>
+      <Confetti trigger={confetti}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

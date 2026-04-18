@@ -1,0 +1,162 @@
+/* ============================================================
+   HORT CASTEVELL — Colors & Type
+   Mediterranean farmhouse · Agrotech clar premium
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ---------- FONT FAMILIES ---------- */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Outfit', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* ---------- SURFACES & INK ---------- */
+  --bg: #F2EBD9;                /* beige — page background */
+  --bg-warm: #EDE4CE;           /* darker beige — inset wells */
+  --surface: #FDFAF3;           /* cream — cards */
+  --surface-hover: #FFF9EE;     /* slightly warmer on hover */
+  --text: #3A3225;              /* dark brown — primary ink */
+  --text-secondary: #7A6F5E;    /* taupe — secondary */
+  --text-tertiary: #A69C89;     /* muted taupe — tertiary/labels */
+  --border: #DDD4C0;            /* subtle line */
+  --border-strong: #C8BDA6;     /* stronger line / disabled */
+
+  /* ---------- BRAND & ROW ACCENTS ---------- */
+  --olive: #3D5A3A;             /* primary — navigation, primary btn */
+  --olive-soft: #5B7A56;
+  --olive-pale: #E8F0E4;
+  --terracotta: #C4673D;        /* F3 accent — tomatoes */
+  --terracotta-pale: #FAE8DE;
+  --amber: #D4A04A;             /* warm highlight — lux */
+  --amber-pale: #FBF0D6;
+  --soil: #5C4033;
+  --clay: #8B6A3E;              /* F4 accent — peppers+aubergine */
+  --sky: #3B7A8C;               /* F2 accent — water/sky/humidity */
+  --sky-pale: #E0F0F4;
+
+  /* ---------- SEMANTIC ---------- */
+  --ok: #5ab35a;
+  --warn: #C4873D;
+  --critical: #B33A3A;
+  --critical-pale: #F8E4E4;
+  --info: var(--sky);
+
+  /* ---------- PER-ROW ACCENTS (F1..F4) ---------- */
+  --row-1: #4E7A48; --row-1-pale: #E8F2E5;  /* F1 olive — enciams+porros */
+  --row-2: #3B7A8C; --row-2-pale: #E0F0F4;  /* F2 sky — enciams */
+  --row-3: #C4673D; --row-3-pale: #FAE8DE;  /* F3 terracotta — tomàquets */
+  --row-4: #8B6A3E; --row-4-pale: #F3EBDD;  /* F4 clay — pebrots+albergínies */
+
+  /* ---------- RADIUS ---------- */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  /* ---------- SHADOWS (brown-tinted) ---------- */
+  --shadow-sm: 0 1px 2px rgba(58, 50, 37, 0.06);
+  --shadow: 0 2px 8px rgba(58, 50, 37, 0.08), 0 1px 2px rgba(58, 50, 37, 0.04);
+  --shadow-lg: 0 8px 24px rgba(58, 50, 37, 0.10), 0 2px 6px rgba(58, 50, 37, 0.06);
+
+  /* ---------- MOTION ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur: 200ms;
+  --dur-slow: 350ms;
+
+  /* ---------- SPACING (rem-based, 4px step) ---------- */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+
+  /* ---------- SEMANTIC TYPE ---------- */
+  --h1-size: 2.25rem;
+  --h2-size: 1.6rem;
+  --h3-size: 1.2rem;
+  --metric-size: 2.5rem;
+  --body-size: 0.95rem;
+  --small-size: 0.8rem;
+  --micro-size: 0.68rem;
+}
+
+/* ---------- SEMANTIC TYPE STYLES ---------- */
+.display-xl, .metric-xl {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: var(--metric-size);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--h1-size);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--h2-size);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--h3-size);
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.divider-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.label, .overline {
+  font-family: var(--font-body);
+  font-size: var(--micro-size);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+p, .body {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.small {
+  font-family: var(--font-body);
+  font-size: var(--small-size);
+  color: var(--text-secondary);
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
