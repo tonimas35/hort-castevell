@@ -1,19 +1,32 @@
 import { ROWS } from '../lib/constants'
+import { useHortStore } from '../lib/store'
 import NodeCard from './NodeCard'
 
+const ROW_TARGETS: Record<number, number> = {
+  1: 50, 2: 50, 3: 45, 4: 55,
+}
+
 export default function NodesGrid() {
+  const reading = useHortStore(s => s.reading)
+  const activeNodes = reading?.nodes.length ?? 0
+
   return (
-    <>
-      <div className="section-divider">
-        <span className="divider-line" />
-        <span className="divider-label">Bancal Principal &middot; 4 Files</span>
-        <span className="divider-line" />
+    <section>
+      <div className="kv-section-head">
+        <h2 className="kv-section-title">Nodes del hort</h2>
+        <span className="kv-section-sub">
+          {activeNodes} de 4 actius · ESP-NOW
+        </span>
       </div>
-      <section className="nodes-grid" aria-label="Files del bancal">
-        {ROWS.map((row, i) => (
-          <NodeCard key={row.id} row={row} index={i} />
+      <div className="kv-nodes" style={{ marginTop: 12 }}>
+        {ROWS.map(row => (
+          <NodeCard
+            key={row.id}
+            row={row}
+            target={ROW_TARGETS[row.id]}
+          />
         ))}
-      </section>
-    </>
+      </div>
+    </section>
   )
 }
