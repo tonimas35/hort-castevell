@@ -28,7 +28,7 @@ export default function GardenCanvas() {
         powerPreference: 'high-performance',
       }}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
-      performance={{ min: 0.5 }}
+      frameloop="always"
     >
       <color attach="background" args={[0x87CEEB]} />
       <fogExp2 attach="fog" args={[0xB0D8F0, 0.004]} />
