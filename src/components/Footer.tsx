@@ -1,11 +1,10 @@
+import '../styles/header.css'
+
 export default function Footer() {
   return (
-    <footer>
-      <div className="footer-inner">
-        <span className="footer-brand">Hort Intel&middot;ligent Castevell</span>
-        <span className="footer-sep">&middot;</span>
-        <span>ESP32 &middot; ESP-NOW &middot; Supabase</span>
-      </div>
+    <footer className="kv-footer">
+      <span>Kultiva v0.5 · Masia Castevell</span>
+      <span>4 nodes · 1 central · ESP-NOW + Supabase</span>
     </footer>
   )
 }
