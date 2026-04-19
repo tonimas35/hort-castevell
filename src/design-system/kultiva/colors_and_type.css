@@ -1,7 +1,9 @@
 /* ============================================================
-   KULTIVA — Design Tokens
-   Agrotech clar premium · Mediterranean farmhouse
+   HORT CASTEVELL — Colors & Type
+   Mediterranean farmhouse · Agrotech clar premium
    ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
   /* ---------- FONT FAMILIES ---------- */
@@ -20,7 +22,7 @@
   --border: #DDD4C0;            /* subtle line */
   --border-strong: #C8BDA6;     /* stronger line / disabled */
 
-  /* ---------- BRAND & ACCENTS ---------- */
+  /* ---------- BRAND & ROW ACCENTS ---------- */
   --olive: #3D5A3A;             /* primary — navigation, primary btn */
   --olive-soft: #5B7A56;
   --olive-pale: #E8F0E4;
@@ -34,16 +36,11 @@
   --sky-pale: #E0F0F4;
 
   /* ---------- SEMANTIC ---------- */
-  --ok: #5AB35A;
+  --ok: #5ab35a;
   --warn: #C4873D;
   --critical: #B33A3A;
   --critical-pale: #F8E4E4;
   --info: var(--sky);
-
-  /* Legacy aliases (mantenim compatibilitat amb codi existent) */
-  --red: var(--critical);
-  --red-pale: var(--critical-pale);
-  --orange: var(--warn);
 
   /* ---------- PER-ROW ACCENTS (F1..F4) ---------- */
   --row-1: #4E7A48; --row-1-pale: #E8F2E5;  /* F1 olive — enciams+porros */
@@ -91,24 +88,7 @@
   --micro-size: 0.68rem;
 }
 
-/* ============================================================
-   RESET + BASE
-   ============================================================ */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ============================================================
-   SEMANTIC TYPE STYLES
-   ============================================================ */
+/* ---------- SEMANTIC TYPE STYLES ---------- */
 .display-xl, .metric-xl {
   font-family: var(--font-body);
   font-weight: 800;
@@ -179,37 +159,4 @@ code, .mono {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
-}
-
-/* ============================================================
-   SHARED ANIMATIONS
-   ============================================================ */
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes waveMotion {
-  0%, 100% { transform: translateX(0) translateY(0); }
-  50% { transform: translateX(-8px) translateY(-2px); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-  50% { box-shadow: 0 0 8px 2px currentColor; }
 }

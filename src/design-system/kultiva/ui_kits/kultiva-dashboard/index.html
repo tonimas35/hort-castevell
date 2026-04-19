@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1440"/>
+<title>Kultiva — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-screen-label="Dashboard">
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="Chart.jsx"></script>
+
+<script type="text/babel">
+const nodesData = [
+  { humidity_pct: 52, battery_pct: 92, last_seen_s: 120, soil_temp: 21.4, irrigating: false },
+  { humidity_pct: 48, battery_pct: 88, last_seen_s: 180, soil_temp: 21.8, irrigating: false },
+  { humidity_pct: 42, battery_pct: 64, last_seen_s: 60,  soil_temp: 23.1, irrigating: true, irrigation_elapsed_min: 4, irrigation_total_min: 12 },
+  { humidity_pct: 58, battery_pct: 81, last_seen_s: 240, soil_temp: 22.0, irrigating: false },
+];
+
+function computeHealthScore(){
+  const scores = ROWS.map((r,i)=>{
+    const h = nodesData[i].humidity_pct;
+    const [lo,hi] = r.ideal;
+    if (h>=lo && h<=hi) return 100;
+    const dist = h<lo ? lo-h : h-hi;
+    return Math.max(0, 100 - dist*3);
+  });
+  return Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+}
+
+function App(){
+  const score = computeHealthScore();
+  return (
+    <>
+      <Header active="dashboard"/>
+      <main className="kv-main">
+        <HeroMetric score={score} rows={ROWS} nodes={nodesData}/>
+        <AmbientStrip/>
+        <NodesGrid nodes={nodesData}/>
+        <BottomSection rows={ROWS}/>
+      </main>
+      <footer className="kv-footer">
+        <div className="kv-footer-inner">
+          <span>Kultiva v0.4.2 · ESP-NOW · <a href="#">GitHub</a></span>
+          <span>Fet amb <span className="kv-heart">♥</span> a Castevell</span>
+        </div>
+      </footer>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

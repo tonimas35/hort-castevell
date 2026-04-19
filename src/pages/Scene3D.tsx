@@ -38,14 +38,21 @@ export default function Scene3D() {
       {/* Top bar */}
       <div className="scene-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <h1>Hort Castevell</h1>
+          <svg viewBox="0 0 40 40" width="28" height="28" fill="none" aria-label="Kultiva" style={{ flexShrink: 0 }}>
+            <circle cx="20" cy="20" r="19" fill="#E8F0E4" stroke="#3D5A3A" strokeWidth="1" />
+            <path d="M20 10 C20 10 13 16 13 22 C13 26 16 29 20 29 C24 29 27 26 27 22 C27 16 20 10 20 10Z" fill="#3D5A3A" />
+            <path d="M20 14 C20 14 16 18 16 22 C16 24.5 17.8 26 20 26 C22.2 26 24 24.5 24 22 C24 18 20 14 20 14Z" fill="#5B7A56" />
+          </svg>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: '1.3rem', fontWeight: 600, letterSpacing: '-0.02em' }}>Kultiva</h1>
           <span className={`scene-topbar-badge ${isConnected ? '' : 'offline'}`}>
             {isConnected ? 'Connectat' : 'Desconnectat'}
           </span>
         </div>
         <nav className="scene-nav">
           <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Dashboard</Link>
-          <Link to="/3d" className={location.pathname === '/3d' ? 'active' : ''}>3D</Link>
+          <Link to="/3d" className={location.pathname === '/3d' ? 'active' : ''}>Vista 3D</Link>
+          <Link to="/control" className={location.pathname === '/control' ? 'active' : ''}>Control</Link>
+          <Link to="/log" className={location.pathname === '/log' ? 'active' : ''}>Log</Link>
         </nav>
       </div>
 
